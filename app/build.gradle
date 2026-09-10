@@ -40,7 +40,7 @@ android {
         //   DD = date                                        -> 12
         //   B  = build number for that date (increments)     -> 1
         //   S  = stage (5 = staging, 9 = production)          -> 5
-        versionCode 126091015
+        versionCode 126091035
         versionName "1.0.0"
         multiDexEnabled true
 

@@ -87,7 +87,7 @@
                 android:id="@+id/loadingLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Loading, Please wait..."
+                android:text="Loading, Please Wait"
                 android:textColor="#4CAF50"
                 android:textStyle="bold"
                 android:textSize="@dimen/_11sdp" />
@@ -178,7 +178,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New content loading, Please wait..."
+            android:text="New Content Loading, Please Wait"
             android:textColor="#FFFFFF"
             android:textSize="@dimen/_9sdp" />
     </LinearLayout>

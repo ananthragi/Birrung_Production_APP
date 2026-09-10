@@ -99,28 +99,22 @@ public class LoginActivity extends AppCompatActivity  {
 
                         CarteResponse apiSucessResponse = (status, messgae) -> {
 
-                            setSubmitting(false);
-
                             if ("1".equals(status)) {
 
-                                if ("1".equals(messgae)) {
-
-                                    Intent intent = new Intent(LoginActivity.this, SignagePlayerActivity.class);
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                    startActivity(intent);
-                                    finish();
-
-                                } else {
-
-                                    Intent intent = new Intent(LoginActivity.this, FileBrowseActivity.class);
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                    startActivity(intent);
-                                    finish();
-                                }
+                                // SUCCESS → keep the button green + "Done" all the way until we
+                                // navigate. Do NOT revert to "Submit" (that caused the flicker).
+                                Class<?> next = "1".equals(messgae)
+                                        ? SignagePlayerActivity.class : FileBrowseActivity.class;
+                                Intent intent = new Intent(LoginActivity.this, next);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                finish();
 
                             } else {
 
-                                // e.g. DUPLICATE_LOGIN → show the server's activation error message.
+                                // FAILURE (e.g. DUPLICATE_LOGIN) → revert the button so the user can
+                                // retry, then show the server's activation error message.
+                                setSubmitting(false);
                                 showActivationError(messgae);
                             }
 
@@ -195,7 +189,9 @@ public class LoginActivity extends AppCompatActivity  {
             signbtn.setEnabled(false);
             signbtn.setText("Done");
             signbtn.setTextColor(Color.WHITE);
-            signbtn.setBackgroundColor(Color.parseColor("#4CAF50")); // green
+            // Rounded green background (same corner radius as the submit button).
+            signbtn.setBackground(androidx.core.content.ContextCompat.getDrawable(
+                    this, R.drawable.btn_done_green));
             // Safety net: revert if no response arrives (e.g. server error with no callback).
             uiHandler.postDelayed(() -> setSubmitting(false), 20000);
         } else {
