@@ -1,0 +1,28 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Clusters" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/grey</item>
+        <item name="colorSecondaryVariant">@color/grey</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/transparent</item>  <!-- ✅ NOT transparent -->
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+    </style>
+    <style name="Theme.Clusters.Splash" parent="Theme.SplashScreen">
+
+        <item name="android:windowBackground">@color/white</item>
+        <item name="windowSplashScreenBackground">@color/white</item>
+
+        <!-- ✅ Set icon to fully transparent drawable — hides the icon -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/transparent</item>
+
+        <item name="postSplashScreenTheme">@style/Theme.Clusters</item>
+
+    </style>
+</resources>

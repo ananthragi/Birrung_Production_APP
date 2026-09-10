@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:background="@color/white"
+    android:layout_height="match_parent">
+
+    <!-- Universal container for all media -->
+    <FrameLayout
+        android:id="@+id/mediaContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/placeholderImage"
+            android:layout_width="@dimen/_160sdp"
+            android:layout_height="@dimen/_160sdp"
+            android:src="@drawable/logo_1"
+            android:layout_margin="@dimen/_55sdp"
+            android:scaleType="centerInside"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:keepScreenOn="true"
+            app:resize_mode="zoom"
+            app:use_controller="false"
+            app:surface_type="texture_view"
+            app:keep_content_on_player_reset="true"/>
+
+        <FrameLayout
+            android:id="@+id/webContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <ImageView
+            android:id="@+id/loadingSpinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:src="@drawable/temp" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:visibility="gone"/>
+
+        <ImageView
+            android:id="@+id/nocontentplay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/nodatafound"
+            android:scaleType="centerInside"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/audioPlaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Playing Audio..."
+            android:textSize="22sp"
+            android:background="#000"
+            android:textColor="#FFF"
+            android:visibility="gone" />
+
+        <!-- Loading indicator: same green striped bar as the login page (shown during content change/download) -->
+        <LinearLayout
+            android:id="@+id/loadingBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/_16sdp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/loadingLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading, Please wait..."
+                android:textColor="#4CAF50"
+                android:textStyle="bold"
+                android:textSize="@dimen/_11sdp" />
+
+            <com.cilpl.Cynergytx_admin.utils.StripedProgressView
+                android:id="@+id/loadingBar"
+                android:layout_width="@dimen/_200sdp"
+                android:layout_height="@dimen/_22sdp"
+                android:layout_marginTop="@dimen/_8sdp" />
+        </LinearLayout>
+
+        <!-- Full-screen status message: "No Internet" (offline + no content) OR
+             "No content configured at this time" (outside any session). -->
+        <LinearLayout
+            android:id="@+id/statusBox"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/_24sdp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/statusIcon"
+                android:layout_width="@dimen/_60sdp"
+                android:layout_height="@dimen/_60sdp"
+                android:layout_marginBottom="@dimen/_14sdp"
+                android:src="@drawable/no_wifi"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/statusTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="@dimen/_16sdp" />
+
+            <TextView
+                android:id="@+id/statusSubtitle"
+                android:layout_width="@dimen/_240sdp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:gravity="center"
+                android:textColor="#777777"
+                android:textSize="@dimen/_10sdp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Full-screen "I'M OFFLINE" branded image (client-provided offline_image.png), shown on a
+             white background, fitted to the screen, whenever the device is offline with no content. -->
+        <ImageView
+            android:id="@+id/offlineImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- Small, non-intrusive "new content loading" indicator (shown while a NEW artwork downloads
+         in the background and the current content keeps playing). Bottom-centre. -->
+    <LinearLayout
+        android:id="@+id/updateLoadingBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_update_loading"
+        android:paddingStart="@dimen/_10sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:paddingTop="@dimen/_6sdp"
+        android:paddingBottom="@dimen/_6sdp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="@dimen/_12sdp"
+            android:layout_height="@dimen/_12sdp"
+            android:layout_marginEnd="@dimen/_8sdp"
+            android:indeterminateTint="#FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New content loading, Please wait..."
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/_9sdp" />
+    </LinearLayout>
+
+    <!-- Low internet speed indicator: small, semi-transparent "no wifi" icon, bottom-right
+         (blinks ~2x/minute while internet is <= 5 Mbps / offline) -->
+    <ImageView
+        android:id="@+id/lowSpeedDot"
+        android:layout_width="@dimen/_14sdp"
+        android:layout_height="@dimen/_14sdp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="@dimen/_10sdp"
+        android:layout_marginRight="@dimen/_10sdp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:alpha="0.6"
+        android:scaleType="fitCenter"
+        android:src="@drawable/no_wifi"
+        android:visibility="gone" />
+
+</RelativeLayout>

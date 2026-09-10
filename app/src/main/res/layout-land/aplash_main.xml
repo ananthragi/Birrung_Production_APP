@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".Activites.SplashActivity">
+
+    <!-- Fallback logo (shown when there is no video) -->
+    <ImageView
+        android:id="@+id/splashLogo"
+        android:layout_width="@dimen/_280sdp"
+        android:layout_height="@dimen/_157sdp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/splogo_1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Logo video: full-width 16:9 band, centred; on a 16:9 TV this fills the screen with no border -->
+    <com.google.android.exoplayer2.ui.PlayerView
+        android:id="@+id/splashVideo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="H,16:9"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:resize_mode="fill"
+        app:surface_type="texture_view"
+        app:use_controller="false" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

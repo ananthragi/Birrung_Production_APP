@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources loaded dynamically via getIdentifier(...) must be protected from shrinkResources,
+     otherwise R8 removes them (it can't see the reference) and the app fails at runtime. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/offline_image,@drawable/logo_anim,@drawable/activation_failed,@drawable/splogo_1,@drawable/loader,@drawable/no_wifi,@raw/*" />

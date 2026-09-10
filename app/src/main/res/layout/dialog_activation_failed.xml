@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_white_rounded"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingLeft="28dp"
+        android:paddingTop="34dp"
+        android:paddingRight="28dp"
+        android:paddingBottom="28dp">
+
+        <!-- Illustration. Replace ic_activation_warning with the client's PNG if desired. -->
+        <ImageView
+            android:id="@+id/activationImage"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginBottom="18dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="Activation failed"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_activation_warning" />
+
+        <TextView
+            android:id="@+id/activationTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:letterSpacing="0.04"
+            android:text="ACTIVATION FAILED"
+            android:textColor="#E63329"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/activationMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="26dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="The activation code is currently active in another screen. Please use different code or Deactivate the existing session."
+            android:textColor="#333333"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/activationOk"
+            android:layout_width="160dp"
+            android:layout_height="50dp"
+            android:background="@drawable/btn_yes_selector"
+            android:text="OK"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</FrameLayout>

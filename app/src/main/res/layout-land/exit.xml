@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:focusableInTouchMode="false">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:padding="@dimen/_5sdp"
+        android:foregroundGravity="center"
+        app:cardCornerRadius="@dimen/_10sdp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/survey_et"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/_20sdp">
+
+            <com.cilpl.Cynergytx_admin.utils.TwCenMTBold
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/areusureexit_txt"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:gravity="center"
+                android:layout_marginBottom="20dp"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                    android:id="@+id/alert_clncel"
+                    android:layout_width="140dp"
+                    android:layout_height="55dp"
+                    android:text="@string/cancel_txt"
+                    android:clickable="true"
+                    android:textColor="@color/white"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:background="@drawable/btn_cancel_selector"
+                    android:nextFocusRight="@id/alertyes_btn"
+                    android:layout_marginEnd="20dp"/>
+
+                <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                    android:id="@+id/alertyes_btn"
+                    android:layout_width="140dp"
+                    android:layout_height="55dp"
+                    android:text="@string/yes_btn"
+                    android:clickable="true"
+                    android:textColor="@color/white"
+                    android:focusable="true"
+                    android:background="@drawable/btn_yes_selector"
+                    android:nextFocusLeft="@id/alert_clncel"
+                    android:focusableInTouchMode="true"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/versionInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:text=""
+                android:textColor="#9E9E9E"
+                android:textSize="10sp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>

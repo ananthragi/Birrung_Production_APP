@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:background="@drawable/splashimage"
+    android:orientation="vertical"
+    tools:context=".Activites.LoginActivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+
+        <LinearLayout
+            android:layout_width="@dimen/_200sdp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+
+
+
+
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:elevation="@dimen/_3sdp"
+                android:padding="@dimen/_5sdp"
+
+                app:cardCornerRadius="@dimen/_10sdp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:layout_marginEnd="@dimen/_10sdp"
+                    android:layout_marginBottom="@dimen/_10sdp"
+                    android:orientation="vertical">
+
+
+                   <ImageView
+                       android:id="@+id/loginLogo"
+                       android:layout_width="@dimen/_120sdp"
+                       android:layout_height="@dimen/_68sdp"
+                       android:scaleType="centerCrop"
+                       android:layout_gravity="center"
+                       android:src="@drawable/splogo_1"/>
+
+                   <!-- Plays res/raw/splash_logo.mp4 (looping) when present; else the logo above shows. -->
+                   <com.google.android.exoplayer2.ui.PlayerView
+                       android:id="@+id/loginLogoVideo"
+                       android:layout_width="@dimen/_160sdp"
+                       android:layout_height="@dimen/_90sdp"
+                       android:layout_gravity="center"
+                       android:visibility="gone"
+                       app:keep_content_on_player_reset="true"
+                       app:resize_mode="fill"
+                       app:shutter_background_color="@color/white"
+                       app:surface_type="surface_view"
+                       app:use_controller="false" />
+                    <!--            <com.google.android.material.textfield.TextInputLayout-->
+                    <!--                android:layout_width="match_parent"-->
+                    <!--                android:layout_height="wrap_content"-->
+                    <!--                app:boxBackgroundColor="@android:color/transparent"-->
+                    <!--                android:background="@android:color/transparent"-->
+                    <!--                android:layout_marginStart="@dimen/_10sdp"-->
+                    <!--                android:layout_marginEnd="@dimen/_10sdp">-->
+
+                    <!--                <com.google.android.material.textfield.TextInputEditText-->
+                    <!--                    android:id="@+id/email_id"-->
+                    <!--                    android:layout_width="match_parent"-->
+                    <!--                    android:layout_height="wrap_content"-->
+                    <!--                    android:layout_weight="1.4"-->
+                    <!--                    android:hint="@string/email_add"-->
+                    <!--                    android:inputType="textEmailAddress"-->
+                    <!--                    android:paddingStart="@dimen/_2sdp"-->
+                    <!--                    android:paddingEnd="@dimen/_5sdp"-->
+                    <!--                    android:singleLine="true"-->
+                    <!--                    android:textColor="@color/black"-->
+                    <!--                    android:textSize="@dimen/_14sdp" />-->
+                    <!--            </com.google.android.material.textfield.TextInputLayout>-->
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        app:passwordToggleTint="@color/colorPrimary"
+                        app:shapeAppearance="@style/Rounded">
+
+                        <com.cilpl.Cynergytx_admin.utils.EditTwCenMTFont
+                            android:id="@+id/email_id"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_20sdp"
+                            android:layout_weight="1.4"
+                            android:hint="@string/email_add"
+                            android:inputType="textEmailAddress"
+                            android:paddingStart="@dimen/_10sdp"
+                            android:paddingEnd="@dimen/_5sdp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textSize="@dimen/_8sdp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+
+
+                    <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                        android:id="@+id/signinbtn"
+                        android:layout_width="@dimen/_50sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center"
+                        android:layout_margin="@dimen/_10sdp"
+                        android:background="@drawable/btn0_bg"
+                        android:gravity="center"
+                        android:text="@string/submit_txt"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/_8sdp" />
+                    <com.cilpl.Cynergytx_admin.utils.TwCenMTBold
+                        android:id="@+id/offlineplayer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/_10sdp"
+                        android:layout_gravity="end"
+                        android:visibility="gone"
+                        android:text="@string/if_you_dont_have_key_click_here"/>
+
+
+
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

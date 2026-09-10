@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1964680537",
+    "project_id": "cynergytx-admin",
+    "storage_bucket": "cynergytx-admin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1964680537:android:9457d867a9e9d4394bd848",
+        "android_client_info": {
+          "package_name": "com.cilpl.Cynergytx_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLP5CPIA06wIFCpioE-GakUiKVR8GVjZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

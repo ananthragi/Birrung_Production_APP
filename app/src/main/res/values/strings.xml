@@ -1,0 +1,285 @@
+<resources>
+    <string name="app_name">Birrung</string>
+    <!--    <string name="app_name">CynergyTx Admin</string>-->
+    <string name="welcomeback">Welcome to Birrung</string>
+    <string name="email">Email</string>
+    <string name="email_add">License Key </string>
+    <string name="email_add1">Email Address <font fgcolor='#feb501'>*</font></string>
+    <string name="password">Password</string>
+    <string name="myname">My Name</string>
+    <string name="forget_password">Forgot Password?</string>
+    <string name="forget_pass">Forgot Password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="bookslot_in">Check Availability</string>
+    <string name="submit_txt">Submit</string>
+    <string name="sign_inul"><u>Sign In</u></string>
+    <string name="sign_up"> Sign Up</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">User Name</string>
+    <string name="nav_header_subtitle">useremail</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="account_settings">Account Settings</string>
+    <string name="selectchoice_txt">Select Your Choice</string>
+    <string name="default_notification_channel_id">channel_id_1</string>
+    <string name="menu_home">Home</string>
+    <string name="no_notif">No Notifications</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="home">Home</string>
+    <string name="booking">Booking</string>
+    <string name="clusters">Clusters</string>
+    <string name="services">Services</string>
+    <string name="support">Support</string>
+    <string name="clusternow">Cluster Now</string>
+    <string name="name">Last Name</string>
+    <string name="enterOtptxt">Please Enter OTP received to your Email</string>
+    <string name="enterregsiteredtxt">Enter your Registered Email</string>
+    <string name="enterconfirmpasstxt">Create and Confirm Password</string>
+    <string name="gstnum">GST No <font fgcolor='#feb501' size="25">(Optional)</font></string>
+    <string name="companyname">Company Name <font fgcolor='#feb501' size="25">(Optional)</font></string>
+    <string name="fname">First Name </string>
+    <string name="uname1"> Person Name <font fgcolor='#feb501'>*</font></string>
+    <string name="cname"> Contact Name <font fgcolor='#feb501'>*</font></string>
+    <string name="allocatedname1"> Allocated Name <font fgcolor='#feb501'>*</font></string>
+    <string name="allocatedname"> Allocated Name </string>
+    <string name="phone">Mobile Number <font fgcolor='#feb501'>*</font></string>
+    <string name="create_password">Create Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="already_have_an_account">Already have an account?  </string>
+    <string name="i_agree_to_user_agreement_and_guest_policy">Terms and Conditions</string>
+    <string name="join_us">Join Us</string>
+    <string name="sign_upul"><u>Sign Up</u></string>
+    <string name="new_user">Not yet Registered ? </string>
+    <string name="startdate">Start Date</string>
+    <string name="startdate1">Start Date<font fgcolor='#feb501'>*</font></string>
+    <string name="selectDate">Select Date<font fgcolor='#feb501'>*</font></string>
+    <string name="selectstartdate">Select Start Date</string>
+    <string name="startmonth">Start Month</string>
+    <string name="end_date">End Date</string>
+    <string name="search">Search</string>
+    <string name="noInternet">No Internet</string>
+    <string name="new_passord">New Password</string>
+    <string name="change_passord">Change Password</string>
+    <string name="change_passordu"><u>Change Password</u></string>
+    <string name="old_passord">Old Password</string>
+    <string name="designation">Designation</string>
+    <string name="address">Address</string>
+    <string name="gender">Gender</string>
+    <string name="male_txt">Male</string>
+    <string name="female_txt">Female</string>
+    <string name="choicepfimage_txt">Choose your profile picture</string>
+    <string name="choicedoc_txt">Choose your document upload</string>
+    <string name="city">City</string>
+    <string name="state">State</string>
+    <string name="confirm_your_details">Confirm Your Details</string>
+    <string name="mon_sat_8_00_20_00">Mon - Sat (8:00-20:00)</string>
+    <string name="select_your_booking_option">Select Your Booking option</string>
+    <string name="select_your_cluster_option">Select Your Clusters option</string>
+    <string name="select_pkgoptions_option">Package Options</string>
+    <string name="add">Add</string>
+    <string name="yes_btn">Yes</string>
+    <string name="cancel_txt">Cancel</string>
+    <string name="areusureexit_txt">Are You Sure You want to Logout ?</string>
+    <string name="are_you_sure_you_want_to_add">Are You Sure You want to Add ?</string>
+    <string name="cart">Cart</string>
+    <string name="mybookings">My Bookings</string>
+    <string name="book_now">Book Now</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="uname">User Name</string>
+    <string name="support_for">Support For</string>
+    <string name="please_select_any_option">Please Select Any Option</string>
+    <string name="show_more">Show More</string>
+    <string name="show_less">Show Less</string>
+    <string name="addmore">Book More</string>
+    <string name="proceed_txt">Proceed</string>
+    <string name="checkout_txt">Checkout</string>
+    <string name="message">Message</string>
+    <string name="virtualofflongtxt">Avail the most cost-effective and professional Virtual Office at a premium location at Hyderabad without bearing its high rent. Avail your virtual office services like office assistance, professional address, telephone answering, courier services etc. \n \n Announce your business at the premium address, without having to physically sit out of that premises. Our virtual office service allows you to access a professional business centre’s services - Business address plan, GST registration plan and Business registration plan.</string>
+    <string name="virtualoffice_txt">Virtual Office</string>
+    <string name="availability">Availability</string>
+    <string name="start_here">Start Here</string>
+    <string name="work_email">Work Email</string>
+    <string name="call_forwording">Call Forwarding</string>
+    <string name="company_registration">Company Registration</string>
+    <string name="recption_desk">Reception Desk</string>
+    <string name="email_forwarding">Email Forwarding</string>
+    <string name="select_your_virtual_plan">Select your Virtual plan</string>
+    <string name="contactUs">Contact Us</string>
+    <string name="aboutus">About US</string>
+    <string name="invoice">Invoices</string>
+    <string name="login">Login</string>
+    <string name="adminlogin">Admin Login</string>
+    <string name="download">Download</string>
+    <string name="invoice_txt">Invoice</string>
+    <string name="send">Send</string>
+    <string name="no_data_found">No Data Found</string>
+    <string name="upload_aadhar_card">Upload Aadhar Card</string>
+    <string name="uplaod_pan_card">Upload Pan Card</string>
+    <string name="end_month">End Month</string>
+    <string name="abotustxt">At Cynergy Tx, we bring in Synergy between various protagonists working of diverse technologies. We believe in giving aspiring businesses flexibility, and access to a thriving community resource. We create bright, inspiring workspaces that can be customized to individual needs within consistently professional environments. Our office space, coworking environments, business lounges, and meeting rooms come with extra level of professionalism.\n \n Through this diverse portfolio, we offer customers an unparalleled choice of design, fitout, location, and building, enabling them to choose the right workspace to meet their unique needs. We offer a collaborative environment with networking opportunities to help you grow your business without any hassles.</string>
+    <string name="amenities_you_ll_love">Amenities you\'ll Love</string>
+    <string name="hses_safety_checks">HSES Safety Checks</string>
+    <string-array name="genderitems">
+        <item>Male</item>
+        <item>Female</item>
+        <item>Others</item>
+    </string-array>
+    <string-array name="cameraOptions">
+        <item>Take Photo</item>
+        <item>Choose from Gallery</item>
+        <item>Cancel</item>
+    </string-array>
+    <string-array name="proofOptions">
+        <item>Take Photo</item>
+        <item>Choose from Gallery</item>
+        <item>Cancel</item>
+        <!--        <item>Browse File</item>-->
+
+    </string-array>
+    <string-array name="bookingOptions">
+        <item>Select Item </item>
+        <item>Work Station</item>
+        <item>Manager Cabins</item>
+        <item>Mini Conference Rooms</item>
+        <item>Big Conference Rooms</item>
+    </string-array>
+
+    <string-array name="allocatedIn">
+        <item>Select Item</item>
+        <item>Cluster A1</item>
+        <item>Cluster A2</item>
+        <item>Cluster B1</item>
+        <item>Cluster B2</item>
+        <item>Cluster B3</item>
+        <item>Cluster B4</item>
+        <item>Manger Cabin -1</item>
+        <item>Manger Cabin -2</item>
+        <item>Floating Desks</item>
+    </string-array>
+    <string-array name="cars_count">
+        <item>Select Item</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="lockingperiod">
+        <item>Select Item</item>
+        <item>6 Months</item>
+        <item>1 Year</item>
+        <item>2 Years</item>
+        <item>3 Years</item>
+        <item>4 Years</item>
+        <item>5 Years</item>
+    </string-array>
+    <string-array name="seqamountlist">
+        <item>Select Item</item>
+        <item>1 Month</item>
+        <item>2 Months</item>
+        <item>3 Months</item>
+        <item>4 Months</item>
+        <item>5 Months</item>
+        <item>6 Months</item>
+        <item>7 Months</item>
+        <item>8 Months</item>
+        <item>9 Months</item>
+        <item>10 Months</item>
+        <item>11 Months</item>
+        <item>12 Months</item>
+    </string-array>
+    <string-array name="gsttype">
+        <item>Select GST Type</item>
+        <item>GST(CGST((9%)+SGST(9%))</item>
+        <item>IGST(18%)</item>
+    </string-array>
+
+    <string-array name="clusters">
+        <item>Select GST Type</item>
+        <item>GST(CGST((9%)+SGST(9%))</item>
+        <item>IGST(18%)</item>
+    </string-array>
+    <string-array name="conflist">
+        <item>Select Item</item>
+        <item>Mini-Conference</item>
+        <item>Max-Conference</item>
+
+    </string-array>
+    <string-array name="virualplans">
+        <item>Select Plans</item>
+        <item>Virtual Office Basic (INR 999)</item>
+        <item>Virtual Office Gold (INR 2199)</item>
+        <item>Virtual Office Platinum (INR 3999)</item>
+
+    </string-array>
+
+    <string-array name="serviceplans">
+        <item>Select Plans</item>
+        <item>BASIC</item>
+        <item>GOLD</item>
+        <item>PLATINUM</item>
+
+    </string-array>
+    <string-array name="packageoptions">
+        <item>Select Package</item>
+        <item>Monthly</item>
+        <item>Quaterly</item>
+        <item>Half-Yearly</item>
+        <item>Anually</item>
+    </string-array>
+    <string-array name="supportoptions">
+        <item>Related To</item>
+        <item>Seeking for Support</item>
+        <item>New  Requirement</item>
+        <item>Booking Issue</item>
+        <item>Others</item>
+    </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_enquiry">Add Enquiry</string>
+    <string name="sendpraposal">Send Praposal</string>
+    <string name="add_client">Add Client</string>
+    <string name="view_client">View Client</string>
+    <string name="view_enquiry">View Enquiry</string>
+    <string name="carparking">Car Parking</string>
+    <string name="freecarparking">Free Car Parking<font fgcolor='#feb501'>*</font></string>
+    <string name="paidcarparking">Paid Car Parking<font fgcolor='#feb501'>*</font></string>
+    <string name="bikeparking">Bike Parking</string>
+    <string name="organization_name">Organization Name <font fgcolor='#feb501'>*</font></string>
+    <string name="cmpnyrelated">Company Related <font fgcolor='#feb501'>*</font></string>
+    <string name="monthpay">Monthly Payment <font fgcolor='#feb501'>*</font></string>
+    <string name="extra_inclusions">Extra inclusions <font fgcolor='#feb501'>*</font></string>
+    <string name="requiremnts">Requiremnts <font fgcolor='#feb501'>*</font></string>
+    <string name="locking_period">Locking Period <font fgcolor='#feb501'>*</font></string>
+    <string name="from">From<font fgcolor='#feb501'>*</font></string>
+    <string name="planingdate">Enquiry Date<font fgcolor='#feb501'>*</font></string>
+    <string name="allocated_in">Allocated In<font fgcolor='#feb501'>*</font></string>
+    <string name="reqfacility_in">Required Facility<font fgcolor='#feb501'>*</font></string>
+    <string name="enquiryto">Enquiry To<font fgcolor='#feb501'>*</font></string>
+    <string name="prposalto">Praposal To<font fgcolor='#feb501'>*</font></string>
+    <string name="to">To<font fgcolor='#feb501'>*</font></string>
+    <string name="add_proposal">Add Praposal</string>
+    <string name="view_praposal">View Praposal</string>
+    <string name="view_conf">View Conference</string>
+    <string name="conferance_rooms">Conference Rooms</string>
+    <string name="confernce_type">Conference Type</string>
+    <string name="hours_month">Hours/Month</string>
+    <string name="hours_assigned">Hours Assigned</string>
+    <string name="billon">Bill On</string>
+    <string name="billon1">Bill On <font fgcolor='#feb501'>*</font></string>
+    <string name="add_conference_room">Add Conference Room</string>
+    <string name="generate_bill">Generate Bill</string>
+    <string name="client_name">Client Name <font fgcolor='#feb501'>*</font></string>
+    <string name="lookingfor">Looking For <font fgcolor='#feb501'>*</font></string>
+    <string name="typeofgst">Type Of GST <font fgcolor='#feb501'>*</font></string>
+    <string name="secdeposyt">Security Deposit For <font fgcolor='#feb501'>*</font></string>
+    <string name="advamount">Advance Amount <font fgcolor='#feb501'>*</font></string>
+    <string name="totalamountpay">Total Amount Payable<font fgcolor='#feb501'>*</font></string>
+    <string name="gsttxt">GST<font fgcolor='#feb501'>*</font></string>
+    <string name="send_praposal">Praposals</string>
+    <string name="if_you_dont_have_key_click_here">If You dont have Key <font fgcolor='#feb501'>Click Here</font></string>
+</resources>

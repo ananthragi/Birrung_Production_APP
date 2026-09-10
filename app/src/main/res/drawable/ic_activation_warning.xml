@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="140dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Warning triangle -->
+    <path
+        android:fillColor="#E63329"
+        android:pathData="M24,8 L44,42 L4,42 Z" />
+
+    <!-- Exclamation bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,20 h4 v11 h-4 z" />
+
+    <!-- Exclamation dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,34 h4 v4 h-4 z" />
+
+    <!-- Small 'error' circle with an X (top-right accent) -->
+    <path
+        android:fillColor="#E63329"
+        android:pathData="M38,4 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.6"
+        android:pathData="M35.6,1.6 L40.4,6.4 M40.4,1.6 L35.6,6.4" />
+</vector>

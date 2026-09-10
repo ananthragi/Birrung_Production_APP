@@ -1,0 +1,64 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base application theme. -->
+    <style name="Theme.Clusters" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/grey</item>
+        <item name="colorSecondaryVariant">@color/grey</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/transparent</item>  <!-- ✅ NOT transparent -->
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+    </style>
+
+    <!-- ✅ Splash theme — must extend Theme.SplashScreen -->
+    <style name="Theme.Clusters.Splash" parent="Theme.SplashScreen">
+
+            <item name="android:windowBackground">@color/white</item>
+            <item name="windowSplashScreenBackground">@color/white</item>
+
+            <!-- ✅ Set icon to fully transparent drawable — hides the icon -->
+            <item name="windowSplashScreenAnimatedIcon">@drawable/transparent</item>
+
+            <item name="postSplashScreenTheme">@style/Theme.Clusters</item>
+
+    </style>
+
+
+    <!-- Signage player: solid WHITE window background (not transparent) so there is no black/blank
+         flash during the launch/transition into the player — it opens straight into the white
+         "Loading, please wait..." screen. -->
+    <style name="Theme.Clusters.Signage" parent="Theme.Clusters">
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <style name="Theme.Clusters.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Clusters.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.Clusters.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in_bottom</item>
+        <item name="android:windowExitAnimation">@anim/slide_out_bottom</item>
+    </style>
+
+    <style name="Cut" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">cut</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="Rounded" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+        <item name="backgroundTint">#f5f5f5</item>
+        <item name="boxStrokeColor">#fff</item>
+        <item name="boxStrokeWidth">2dp</item>
+    </style>
+
+</resources>
