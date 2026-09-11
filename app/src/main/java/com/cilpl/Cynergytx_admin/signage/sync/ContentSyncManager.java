@@ -87,10 +87,15 @@ public class ContentSyncManager {
                 if (cancelled) break;
                 if (f.url == null || f.url.isEmpty()) continue;
 
-                // Already on disk? Trust images/pdfs, but VERIFY videos are complete & playable —
-                // a previously-stored file may have been truncated by the backend last time.
+                // Already on disk?
+                //  - ONLINE: verify it's complete & playable; if broken, delete it and re-download.
+                //  - OFFLINE: NEVER validate/delete it. We cannot re-fetch it, and some media-player
+                //    devices wrongly report a good file as "invalid" (MediaMetadataRetriever /
+                //    BitmapFactory quirks) — deleting it offline permanently loses the content and
+                //    shows the "I'M OFFLINE" screen. So offline we trust the file and play it.
                 if (storage.isDownloaded(f)) {
-                    if (MediaValidator.isComplete(f, storage.localFile(f))) {
+                    boolean online = allowCleanup; // this flag is set from the host's connectivity check
+                    if (!online || MediaValidator.isComplete(f, storage.localFile(f))) {
                         storage.touch(f);
                         report.alreadyPresent++;
                         main.post(() -> cb.onFileReady(f));
