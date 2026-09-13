@@ -86,6 +86,7 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
     // Loading indicator (same green striped bar as the login page).
     private View loadingBox;                 // FIRST-TIME: full-screen "Loading, please wait..."
     private View updateLoadingBox;           // UPDATE: small corner "New content loading, please wait..."
+    private TextView updateLoadingPercent;   // live download % shown inside the update chip
     private com.cilpl.Cynergytx_admin.utils.StripedProgressView loadingBar;
     private android.animation.ValueAnimator loadingBarAnim;
 
@@ -155,6 +156,7 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         lowSpeedDot = findViewById(R.id.lowSpeedDot);
         loadingBox = findViewById(R.id.loadingBox);
         updateLoadingBox = findViewById(R.id.updateLoadingBox);
+        updateLoadingPercent = findViewById(R.id.updateLoadingPercent);
         loadingBar = findViewById(R.id.loadingBar);
         statusBox = findViewById(R.id.statusBox);
         statusIcon = findViewById(R.id.statusIcon);
@@ -622,13 +624,20 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
 
     /** Update the single first-time loader with the REAL download percentage of the active content. */
     private void showDownloadProgress(int percent) {
-        if (loadingBox == null || loadingBar == null) return;
-        if (loadingBox.getVisibility() != View.VISIBLE) return; // content already playing → ignore
-        if (percent >= 0) {
+        if (percent < 0) return;   // unknown size → leave the indicators as they are
+
+        // FIRST-TIME: full-screen bar shows the real 0..100% download progress.
+        if (loadingBox != null && loadingBox.getVisibility() == View.VISIBLE && loadingBar != null) {
             loadingBar.setIndeterminate(false);
-            loadingBar.setProgress(percent);             // genuine 0..100% download progress
+            loadingBar.setProgress(percent);
         }
-        // percent < 0 (unknown size) → keep the bar where it is; never flip to a different look.
+
+        // UPDATE (old content still playing): show the same real % inside the small corner chip,
+        // so it is visible that the new file is being saved to local storage and when it completes.
+        if (updateLoadingBox != null && updateLoadingBox.getVisibility() == View.VISIBLE
+                && updateLoadingPercent != null) {
+            updateLoadingPercent.setText(percent + "%");
+        }
     }
 
     /** UPDATE loader: small corner "New content loading, please wait..." — old content keeps playing. */
@@ -638,7 +647,10 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         if (loadingBox != null) loadingBox.setVisibility(View.GONE);
         hideStatus();
         loadingSpinner.setVisibility(View.GONE);
-        if (updateLoadingBox != null) updateLoadingBox.setVisibility(View.VISIBLE);
+        if (updateLoadingBox != null && updateLoadingBox.getVisibility() != View.VISIBLE) {
+            if (updateLoadingPercent != null) updateLoadingPercent.setText("0%"); // reset for the new download
+            updateLoadingBox.setVisibility(View.VISIBLE);
+        }
     }
 
     private void hideLoading() {
