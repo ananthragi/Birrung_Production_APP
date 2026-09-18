@@ -31,9 +31,20 @@ public final class MediaValidator {
      */
     public static boolean isComplete(MediaFile mf, File file) {
         if (mf == null || file == null) return false;
+        if (!file.exists() || file.length() == 0) return false;
+
+        // FAST PATH — the backend gave us the exact size and the file matches it byte-for-byte.
+        // MediaDownloadManager only renames ".part" -> final file when the size matches, so a
+        // size match already proves the download is complete. This check is instant and
+        // device-independent, and it avoids running a MediaMetadataRetriever scan on a large
+        // video — that scan takes minutes on a slow TV box and was delaying the switch to new
+        // content (old video kept playing long after the download hit 100%).
+        if (mf.fileSize > 0) return file.length() == mf.fileSize;
+
+        // No size from the backend → fall back to inspecting the file contents.
         if (mf.isVideo()) return isPlayableVideo(file);
         if (mf.isImage()) return isDecodableImage(file);
-        return file.exists() && file.length() > 0;
+        return true;
     }
 
     /** True only if the file exists and decodes as a real image (guards partial/corrupt JPG/PNG). */

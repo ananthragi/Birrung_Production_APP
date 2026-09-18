@@ -33,12 +33,52 @@ public class MediaFile {
     // extension. This makes playback robust even when the backend sends a blank/wrong "type"
     // (e.g. a PDF that isn't tagged "pdf" must still be rendered as a PDF, not loaded as an image).
 
+    /**
+     * A YouTube link (watch / youtu.be / embed / shorts). YouTube cannot be downloaded or cached —
+     * it is streamed through the YouTube IFrame player, so it is handled separately from normal
+     * media files (no local storage, no download, requires internet).
+     */
+    public boolean isYouTube() {
+        String u = url.toLowerCase();
+        return u.contains("youtube.com/") || u.contains("youtu.be/");
+    }
+
+    /** The YouTube playlist id (…list=PLxxx) when the link is a playlist, else "". */
+    public String youTubePlaylistId() {
+        try {
+            java.util.regex.Matcher m =
+                    java.util.regex.Pattern.compile("[?&]list=([A-Za-z0-9_-]+)").matcher(url);
+            if (m.find()) return m.group(1);
+        } catch (Exception ignored) { }
+        return "";
+    }
+
+    /** The YouTube video id parsed from the URL, or "" when it can't be determined. */
+    public String youTubeId() {
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                    "(?:youtu\\.be/|youtube\\.com/(?:embed/|shorts/|v/|live/|watch\\?(?:.*&)?v=))([A-Za-z0-9_-]{6,})")
+                    .matcher(url);
+            if (m.find()) return m.group(1);
+        } catch (Exception ignored) { }
+        return "";
+    }
+
+    /**
+     * Web content shown in a WebView rather than downloaded: a YouTube link, or anything the
+     * backend marks as {@code "type":"url"}. These are streamed and need internet.
+     */
+    public boolean isWeb() {
+        return isYouTube() || "url".equalsIgnoreCase(type) || "web".equalsIgnoreCase(type);
+    }
+
     public boolean isPdf() {
+        if (isWeb()) return false;
         return "pdf".equalsIgnoreCase(type) || urlExt().equals(".pdf");
     }
 
     public boolean isVideo() {
-        if (isPdf()) return false;
+        if (isWeb() || isPdf()) return false;
         if ("video".equalsIgnoreCase(type)) return true;
         switch (urlExt()) {
             case ".mp4": case ".mkv": case ".webm": case ".3gp": case ".mov": case ".m4v":
@@ -48,7 +88,7 @@ public class MediaFile {
     }
 
     public boolean isImage() {
-        if (isPdf() || isVideo()) return false;   // never misclassify a pdf/video as an image
+        if (isWeb() || isPdf() || isVideo()) return false; // never misclassify these as an image
         if ("image".equalsIgnoreCase(type)) return true;
         switch (urlExt()) {
             case ".jpg": case ".jpeg": case ".png": case ".webp": case ".gif": case ".bmp":

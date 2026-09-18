@@ -755,7 +755,7 @@ public class ApiDataSync {
         @Override
         public void onJSONObjectResponse(JSONObject jsonObject) {
             try {
-                Log.e("Logindetails", jsonObject.toString());
+                Log.e("Logindetails", "" + jsonObject);
                 String status = jsonObject.optString("status", "0");
 
                 if (status.equals("1")) {

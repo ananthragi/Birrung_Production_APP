@@ -87,6 +87,7 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
     private View loadingBox;                 // FIRST-TIME: full-screen "Loading, please wait..."
     private View updateLoadingBox;           // UPDATE: small corner "New content loading, please wait..."
     private TextView updateLoadingPercent;   // live download % shown inside the update chip
+    private TextView updateLoadingText;      // state message inside the update chip
     private com.cilpl.Cynergytx_admin.utils.StripedProgressView loadingBar;
     private android.animation.ValueAnimator loadingBarAnim;
 
@@ -157,6 +158,7 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         loadingBox = findViewById(R.id.loadingBox);
         updateLoadingBox = findViewById(R.id.updateLoadingBox);
         updateLoadingPercent = findViewById(R.id.updateLoadingPercent);
+        updateLoadingText = findViewById(R.id.updateLoadingText);
         loadingBar = findViewById(R.id.loadingBar);
         statusBox = findViewById(R.id.statusBox);
         statusIcon = findViewById(R.id.statusIcon);
@@ -205,11 +207,12 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
                     }
                     @Override
                     public void onContentPlaying() {
-                        // Real content is on screen — hide every loader / status overlay.
+                        // Real content is on screen — hide loaders, BUT keep the "new content
+                        // downloading" chip up while a new download is still pending.
                         runOnUiThread(() -> {
                             nocontent.setVisibility(View.GONE);
                             hideStatus();
-                            hideLoading();
+                            hideLoading(controller != null && controller.isWaitingForNewContent());
                         });
                     }
                     @Override
@@ -250,6 +253,9 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
                         }
                     }
                 });
+
+        // Host view for YouTube links (streamed via the YouTube player, never downloaded).
+        controller.setWebContainer(findViewById(R.id.webContainer));
 
         // Continuous network speed monitoring (starts right after login → player).
         speedMonitor = new NetworkSpeedMonitor(this, (mbps, linkSpeed) ->
@@ -425,7 +431,14 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
             @Override
             public void onFileReady(MediaFile file) {
                 if (isFinishing() || isDestroyed()) return;
-                // Start playback as soon as the active playlist's files begin landing.
+
+                // NOTE: the chip's "100% / Download Complete, Preparing Content" state is driven by
+                // onProgress(), which only reports the ACTIVE content. We deliberately do not set it
+                // here, because onFileReady also fires for background files belonging to OTHER
+                // sessions — that would make the chip jump to 100% while the active download is
+                // still in progress.
+
+                // Switch to the new content IMMEDIATELY (no waiting for the rest of the sync).
                 Playlist active = schedule.getActivePlaylist();
                 if (active != null) {
                     controller.setPlaylist(active);
@@ -634,9 +647,13 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
 
         // UPDATE (old content still playing): show the same real % inside the small corner chip,
         // so it is visible that the new file is being saved to local storage and when it completes.
-        if (updateLoadingBox != null && updateLoadingBox.getVisibility() == View.VISIBLE
-                && updateLoadingPercent != null) {
-            updateLoadingPercent.setText(percent + "%");
+        if (updateLoadingBox != null && updateLoadingBox.getVisibility() == View.VISIBLE) {
+            if (updateLoadingPercent != null) updateLoadingPercent.setText(percent + "%");
+            if (updateLoadingText != null) {
+                updateLoadingText.setText(percent >= 100
+                        ? "Download Complete, Preparing Content"   // 100% → about to switch
+                        : "New Content Loading, Please Wait");     // still downloading
+            }
         }
     }
 
@@ -648,16 +665,26 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         hideStatus();
         loadingSpinner.setVisibility(View.GONE);
         if (updateLoadingBox != null && updateLoadingBox.getVisibility() != View.VISIBLE) {
-            if (updateLoadingPercent != null) updateLoadingPercent.setText("0%"); // reset for the new download
+            // reset the chip for the new download
+            if (updateLoadingPercent != null) updateLoadingPercent.setText("0%");
+            if (updateLoadingText != null) updateLoadingText.setText("New Content Loading, Please Wait");
             updateLoadingBox.setVisibility(View.VISIBLE);
         }
     }
 
-    private void hideLoading() {
+    private void hideLoading() { hideLoading(false); }
+
+    /**
+     * @param keepUpdateChip when true the small "new content downloading" chip stays on screen.
+     *                       The old content keeps re-rendering (video loops / image re-shows) and
+     *                       each re-render calls onContentPlaying() — without this the chip would
+     *                       vanish part-way through the download and never come back.
+     */
+    private void hideLoading(boolean keepUpdateChip) {
         loadingSpinner.setVisibility(View.GONE);
         if (loadingBarAnim != null) { loadingBarAnim.cancel(); loadingBarAnim = null; }
         if (loadingBox != null) loadingBox.setVisibility(View.GONE);
-        if (updateLoadingBox != null) updateLoadingBox.setVisibility(View.GONE);
+        if (!keepUpdateChip && updateLoadingBox != null) updateLoadingBox.setVisibility(View.GONE);
     }
 
     /** Offline AND no complete content to play → full-screen "I'M OFFLINE" image (never a stuck loader). */

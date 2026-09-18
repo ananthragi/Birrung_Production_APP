@@ -1,5 +1,6 @@
 package com.cilpl.Cynergytx_admin.signage.player;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -12,6 +13,11 @@ import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -84,6 +90,8 @@ public class PlaylistController {
     private String waitingSignature = "";     // content we're waiting to download (showing holding frame)
     private String holdingFramePath = null;   // local path of the "safe frame" from accessMediaFiles
     private String fallbackFileName = null;   // name of an on-disk file being shown as an offline fallback
+    private ViewGroup webContainer;           // host for the YouTube player (streamed, never downloaded)
+    private WebView webView;
     private boolean running = false;
     private volatile boolean released = false;
 
@@ -224,6 +232,7 @@ public class PlaylistController {
                 handler.removeCallbacks(advance);
                 player.setPlayWhenReady(false);
                 player.stop();
+                hideWeb();
                 if (callback != null) callback.onWaitingForContent();
             }
         }
@@ -255,6 +264,7 @@ public class PlaylistController {
      */
     public void playLocalFallback(File file) {
         if (released || file == null || !file.exists()) return;
+        hideWeb();
         String sig = "fallback:" + file.getName();
         if (sig.equals(currentSignature) && running) return; // already showing this fallback
         handler.removeCallbacks(advance);
@@ -360,6 +370,8 @@ public class PlaylistController {
     }
 
     private boolean isPlayable(MediaFile f) {
+        // Web content is streamed, never stored — playable only while there is internet.
+        if (f.isWeb()) return isOnline();
         return storage.isDownloaded(f) || streamable.contains(f.localFileName());
     }
 
@@ -397,7 +409,11 @@ public class PlaylistController {
             currentFile = f;
             boolean local = storage.isDownloaded(f);
 
-            if (f.isVideo()) {
+            if (f.isWeb()) {
+                // Streamed in a WebView (YouTube embed or plain web URL) — never stored locally.
+                notifyStreaming(false, null);
+                playYouTube(f);
+            } else if (f.isVideo()) {
                 if (local) {
                     notifyStreaming(false, null);
                     playLocalVideo(storage.localFile(f));
@@ -428,6 +444,7 @@ public class PlaylistController {
     // ---- local playback ----
 
     private void showImage(File file, int seconds) {
+        hideWeb();
         if (callback != null) callback.onContentPlaying();
         player.setPlayWhenReady(false);
         player.stop();
@@ -441,7 +458,93 @@ public class PlaylistController {
         startVideo(Uri.fromFile(file));
     }
 
+    /** Host view for the YouTube player. Must be set by the Activity for YouTube links to work. */
+    public void setWebContainer(ViewGroup container) { this.webContainer = container; }
+
+    /**
+     * Play a YouTube link through the official YouTube IFrame player inside a WebView.
+     * YouTube cannot be downloaded or cached (their terms + no direct media URL), so this is
+     * STREAMED and requires internet. Autoplay on TV requires the video to start muted.
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    private void playYouTube(MediaFile f) {
+        if (webContainer == null) {
+            Log.e(TAG, "No web container set — cannot play: " + f.url);
+            handler.postDelayed(advance, 3000L);
+            return;
+        }
+        String id = f.isYouTube() ? f.youTubeId() : "";
+        String listId = f.isYouTube() ? f.youTubePlaylistId() : "";
+        if (f.isYouTube() && id.isEmpty() && listId.isEmpty()) {
+            Log.e(TAG, "Could not parse a YouTube video/playlist id from: " + f.url);
+            handler.postDelayed(advance, 3000L);
+            return;
+        }
+
+        player.setPlayWhenReady(false);
+        player.stop();
+        playerView.setVisibility(View.GONE);
+        imageView.setVisibility(View.GONE);
+
+        if (webView == null) {
+            webView = new WebView(ctx);
+            WebSettings s = webView.getSettings();
+            s.setJavaScriptEnabled(true);
+            s.setDomStorageEnabled(true);
+            s.setMediaPlaybackRequiresUserGesture(false); // required for autoplay
+            s.setLoadWithOverviewMode(true);
+            s.setUseWideViewPort(true);
+            webView.setBackgroundColor(Color.BLACK);
+            webView.setWebChromeClient(new WebChromeClient()); // required for HTML5 video
+            webContainer.addView(webView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        }
+
+        if (!f.isYouTube()) {
+            webView.loadUrl(f.url);            // plain "type":"url" web page
+            webContainer.setVisibility(View.VISIBLE);
+            if (callback != null) callback.onContentPlaying();
+            return;
+        }
+
+        // The YouTube embed must be inside an <iframe> on a page served from a REAL, non-YouTube
+        // origin:
+        //   - iframe with a youtube.com base URL  → our page pretends to BE youtube.com  → error 152
+        //   - loadUrl() of the embed page directly → no referrer at all                  → error 153
+        // So we host the iframe on the project's own domain and pass a matching &origin=.
+        final String base = "https://birrung.com.au";
+        String common = "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1"
+                + "&rel=0&iv_load_policy=3&fs=0&origin=" + base;
+        // loop=1 needs playlist=<id> for a single video, so it repeats continuously (signage).
+        String src = !id.isEmpty()
+                ? "https://www.youtube.com/embed/" + id + "?" + common + "&loop=1&playlist=" + id
+                : "https://www.youtube.com/embed/videoseries?list=" + listId + "&" + common + "&loop=1";
+
+        String html = "<!DOCTYPE html><html><head>"
+                + "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+                + "<style>html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}"
+                + "iframe{border:0;display:block;width:100%;height:100%}</style></head><body>"
+                + "<iframe src='" + src + "' frameborder='0'"
+                + " allow='autoplay; encrypted-media'></iframe></body></html>";
+
+        webView.loadDataWithBaseURL(base, html, "text/html", "utf-8", null);
+        webContainer.setVisibility(View.VISIBLE);
+        if (callback != null) callback.onContentPlaying();
+        // No auto-advance: the iframe loops the video continuously.
+    }
+
+    /** Hide and silence the YouTube player when switching to any other content. */
+    private void hideWeb() {
+        if (webContainer != null && webContainer.getVisibility() != View.GONE) {
+            webContainer.setVisibility(View.GONE);
+        }
+        if (webView != null) {
+            try { webView.loadUrl("about:blank"); } catch (Throwable ignored) { } // stops audio
+        }
+    }
+
     private void showPdf(File file, int seconds) {
+        hideWeb();
         if (callback != null) callback.onContentPlaying();
         player.setPlayWhenReady(false);
         player.stop();
@@ -534,6 +637,7 @@ public class PlaylistController {
     }
 
     private void startVideo(Uri uri) {
+        hideWeb();
         // Bring the player up UNDERNEATH the current holding/last image. We do NOT hide the
         // image yet — it stays on top and covers the player's shutter while a (possibly large)
         // video buffers. onRenderedFirstFrame() hides it the instant the real video is painted,
@@ -577,7 +681,15 @@ public class PlaylistController {
     /** True while real content is currently playing (used to detect a session ending). */
     public boolean isPlaying() { return running; }
 
+    /**
+     * True while NEW content has been detected but isn't downloaded/switched in yet (the old
+     * content is still on screen). The host uses this to keep the "new content downloading"
+     * indicator visible — the old content re-rendering must not hide it.
+     */
+    public boolean isWaitingForNewContent() { return !waitingSignature.isEmpty(); }
+
     public void stop() {
+        hideWeb();
         running = false;
         fallbackFileName = null;
         handler.removeCallbacks(advance);
@@ -589,5 +701,12 @@ public class PlaylistController {
         released = true;
         stop();
         player.removeListener(videoListener);
+        if (webView != null) {
+            try {
+                if (webContainer != null) webContainer.removeView(webView);
+                webView.destroy();
+            } catch (Throwable ignored) { }
+            webView = null;
+        }
     }
 }

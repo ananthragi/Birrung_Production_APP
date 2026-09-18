@@ -178,6 +178,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:id="@+id/updateLoadingText"
             android:text="New Content Loading, Please Wait"
             android:textColor="#FFFFFF"
             android:textSize="@dimen/_9sdp" />

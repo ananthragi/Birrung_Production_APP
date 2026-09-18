@@ -87,6 +87,14 @@ public class ContentSyncManager {
                 if (cancelled) break;
                 if (f.url == null || f.url.isEmpty()) continue;
 
+                // YouTube links are streamed by the YouTube player — they are never downloaded or
+                // stored locally. Skip them entirely so the downloader doesn't try to fetch the
+                // YouTube page as a media file (which would fail and retry forever).
+                if (f.isWeb()) {
+                    main.post(() -> cb.onFileReady(f));
+                    continue;
+                }
+
                 // Already on disk?
                 //  - ONLINE: verify it's complete & playable; if broken, delete it and re-download.
                 //  - OFFLINE: NEVER validate/delete it. We cannot re-fetch it, and some media-player
