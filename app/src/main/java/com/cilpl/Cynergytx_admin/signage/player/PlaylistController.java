@@ -92,6 +92,7 @@ public class PlaylistController {
     private String fallbackFileName = null;   // name of an on-disk file being shown as an offline fallback
     private ViewGroup webContainer;           // host for the YouTube player (streamed, never downloaded)
     private WebView webView;
+    private String loadedWebTarget = null;    // what the WebView currently has loaded (avoid reloads)
     private boolean running = false;
     private volatile boolean released = false;
 
@@ -240,6 +241,10 @@ public class PlaylistController {
 
     /** True when real content (scheduled OR an offline fallback) is on screen (must not be interrupted). */
     private boolean isPlayingRealContent() {
+        // A visible web player counts as real content. Otherwise a momentary connectivity blip would
+        // make isPlayable() false for a YouTube item, tear the WebView down and restart the video.
+        // The YouTube player handles its own buffering, so we leave it alone.
+        if (running && webContainer != null && webContainer.getVisibility() == View.VISIBLE) return true;
         return running && ((currentFile != null && isPlayable(currentFile)) || fallbackFileName != null);
     }
 
@@ -366,7 +371,19 @@ public class PlaylistController {
     }
 
     private boolean isShowingSomething() {
-        return player.isPlaying() || imageView.getVisibility() == View.VISIBLE;
+        // NOTE: the web container MUST be included. While a YouTube/web item is playing, ExoPlayer
+        // is stopped and the ImageView is hidden — without this check the controller thinks nothing
+        // is on screen and re-runs playCurrent(), which reloads the WebView and restarts the video
+        // from the beginning every time a sync reports a file (every ~15-60s).
+        // Use the player STATE, not isPlaying(): isPlaying() is false while the video is BUFFERING,
+        // and re-running playCurrent() then re-prepares the whole decoder. Repeated decoder
+        // re-initialisation causes progressive stutter/lag on low-power TV boxes.
+        boolean videoOnScreen = playerView.getVisibility() == View.VISIBLE
+                && player.getPlaybackState() != Player.STATE_IDLE;
+
+        return videoOnScreen
+                || imageView.getVisibility() == View.VISIBLE
+                || (webContainer != null && webContainer.getVisibility() == View.VISIBLE);
     }
 
     private boolean isPlayable(MediaFile f) {
@@ -481,6 +498,14 @@ public class PlaylistController {
             return;
         }
 
+        // Already showing exactly this content → do NOT reload (a reload restarts the video).
+        String targetKey = f.isYouTube() ? ("yt:" + id + ":" + listId) : ("web:" + f.url);
+        if (targetKey.equals(loadedWebTarget) && webContainer.getVisibility() == View.VISIBLE) {
+            if (callback != null) callback.onContentPlaying();
+            return;
+        }
+        loadedWebTarget = targetKey;
+
         player.setPlayWhenReady(false);
         player.stop();
         playerView.setVisibility(View.GONE);
@@ -513,19 +538,28 @@ public class PlaylistController {
         //   - loadUrl() of the embed page directly → no referrer at all                  → error 153
         // So we host the iframe on the project's own domain and pass a matching &origin=.
         final String base = "https://birrung.com.au";
-        String common = "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1"
-                + "&rel=0&iv_load_policy=3&fs=0&origin=" + base;
-        // loop=1 needs playlist=<id> for a single video, so it repeats continuously (signage).
-        String src = !id.isEmpty()
-                ? "https://www.youtube.com/embed/" + id + "?" + common + "&loop=1&playlist=" + id
-                : "https://www.youtube.com/embed/videoseries?list=" + listId + "&" + common + "&loop=1";
+
+        // Use the YouTube IFrame API so we can control the player:
+        //  - it must START muted (browsers/WebView only allow autoplay when muted),
+        //  - then we unMute() + setVolume(100) as soon as it is ready, so sound plays,
+        //  - and we restart it on ENDED as a safety net so the loop never stops.
+        String playerVars = "'autoplay':1,'mute':1,'controls':0,'playsinline':1,'modestbranding':1,"
+                + "'rel':0,'iv_load_policy':3,'fs':0,'disablekb':1,'origin':'" + base + "'";
+        String idVars = !id.isEmpty()
+                ? "videoId:'" + id + "', playerVars:{" + playerVars + ",'loop':1,'playlist':'" + id + "'}"
+                : "playerVars:{" + playerVars + ",'loop':1,'listType':'playlist','list':'" + listId + "'}";
 
         String html = "<!DOCTYPE html><html><head>"
                 + "<meta name='viewport' content='width=device-width, initial-scale=1'>"
                 + "<style>html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}"
-                + "iframe{border:0;display:block;width:100%;height:100%}</style></head><body>"
-                + "<iframe src='" + src + "' frameborder='0'"
-                + " allow='autoplay; encrypted-media'></iframe></body></html>";
+                + "#p{width:100%;height:100%}</style></head><body><div id='p'></div>"
+                + "<script src='https://www.youtube.com/iframe_api'></script><script>"
+                + "var pl;function onYouTubeIframeAPIReady(){pl=new YT.Player('p',{height:'100%',width:'100%',"
+                + idVars + ",events:{"
+                + "'onReady':function(e){try{e.target.unMute();e.target.setVolume(100);}catch(x){}e.target.playVideo();},"
+                + "'onStateChange':function(e){if(e.data===YT.PlayerState.ENDED){e.target.playVideo();}}"
+                + "}});}"
+                + "</script></body></html>";
 
         webView.loadDataWithBaseURL(base, html, "text/html", "utf-8", null);
         webContainer.setVisibility(View.VISIBLE);
@@ -541,6 +575,7 @@ public class PlaylistController {
         if (webView != null) {
             try { webView.loadUrl("about:blank"); } catch (Throwable ignored) { } // stops audio
         }
+        loadedWebTarget = null;   // next play must load fresh
     }
 
     private void showPdf(File file, int seconds) {

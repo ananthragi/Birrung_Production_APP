@@ -36,14 +36,18 @@ public class NetworkSpeedMonitor {
     // Measuring the content server instead would report that server's per-connection limit,
     // not the real internet speed. Configurable via setDefaultSpeedUrl().
     private static final String DEFAULT_SPEED_URL = "https://speed.cloudflare.com/__down?bytes=1048576";
-    private static final long INTERVAL_STREAMING_MS = 3000;   // react fast while streaming video
-    private static final long INTERVAL_IDLE_MS = 3000;        // monitor continuously so the low-speed
-                                                              // indicator appears/clears almost instantly
+    // Probing costs real bandwidth AND CPU on a low-power TV box (TLS + decompress), which competes
+    // with the video decoder and adds heat. Probing 512KB every 3s was ~600 MB/hour of traffic and
+    // constant load. A signage screen only needs this for the low-speed indicator, so probe less
+    // often and with a smaller sample (~60 MB/hour). Full disconnection is still detected INSTANTLY
+    // via the ConnectivityManager onLost callback, so the indicator stays responsive.
+    private static final long INTERVAL_STREAMING_MS = 5000;   // react faster only while streaming video
+    private static final long INTERVAL_IDLE_MS = 15000;       // normal local playback
     // We download a larger sample and IGNORE the first part, because a short transfer
     // finishes during TCP slow-start and under-reports speed on fast links (false "low").
-    private static final long WARMUP_BYTES = 128 * 1024;       // skip TCP slow-start
-    private static final long PROBE_TOTAL_BYTES = 512 * 1024;  // download up to 512 KB
-    private static final long MIN_MEASURED_BYTES = 128 * 1024; // need >=128 KB measured to trust
+    private static final long WARMUP_BYTES = 64 * 1024;        // skip TCP slow-start
+    private static final long PROBE_TOTAL_BYTES = 256 * 1024;  // download up to 256 KB
+    private static final long MIN_MEASURED_BYTES = 64 * 1024;  // need >=64 KB measured to trust
     private static final double OK_SENTINEL = 1000.0;          // "measured fine / can't measure" → not low
 
     private final Context ctx;
