@@ -239,6 +239,13 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
                         runOnUiThread(SignagePlayerActivity.this::handleContentError);
                     }
                     @Override
+                    public void onNeedsInternet() {
+                        // A YouTube/web item is scheduled but there is no usable internet →
+                        // show the offline screen. It resumes automatically (from the same
+                        // position) once the connection is back.
+                        runOnUiThread(SignagePlayerActivity.this::showNoInternet);
+                    }
+                    @Override
                     public void onLowBandwidth() {
                         // Streaming video + speed <= 5 Mbps → no-op (holding frame removed; the
                         // controller already shows the loader while bandwidth is too low to stream).
@@ -714,18 +721,24 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         statusBox.setVisibility(View.VISIBLE);
     }
 
-    /** Current time is outside every configured session → "No content configured" screen. */
+    /**
+     * Current time is outside every configured session → show the client's "no content configured"
+     * animation (no_content.gif). Loaded with Glide so the GIF actually animates.
+     */
     private void showNoSession() {
         hideLoading();
         playerView.setVisibility(View.GONE);
         imageView.setVisibility(View.GONE);
-        nocontent.setVisibility(View.GONE);
         if (offlineImage != null) offlineImage.setVisibility(View.GONE);
-        if (statusBox == null) return;
-        if (statusIcon != null) statusIcon.setVisibility(View.GONE);
-        if (statusTitle != null) statusTitle.setText("Oops! No content has been configured at this time.");
-        if (statusSubtitle != null) statusSubtitle.setVisibility(View.GONE);
-        statusBox.setVisibility(View.VISIBLE);
+        if (statusBox != null) statusBox.setVisibility(View.GONE);
+        if (nocontent == null) return;
+        // Only (re)load the GIF when it isn't already on screen — this can be called repeatedly.
+        if (nocontent.getVisibility() != View.VISIBLE) {
+            try {
+                Glide.with(this).asGif().load(R.drawable.no_content).into(nocontent);
+            } catch (Throwable ignored) { }
+            nocontent.setVisibility(View.VISIBLE);
+        }
     }
 
     private void hideStatus() {

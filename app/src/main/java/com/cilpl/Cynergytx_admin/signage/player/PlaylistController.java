@@ -70,6 +70,8 @@ public class PlaylistController {
         void onContentError();
         /** Streaming video + bandwidth <= 5 Mbps: host may refresh the holding frame from the API. */
         void onLowBandwidth();
+        /** A web/YouTube item needs internet but there is none (or it's too slow) → show offline screen. */
+        void onNeedsInternet();
         /** Tell the host whether we're streaming a video now (so the speed monitor can probe throughput). */
         void onStreamingModeChanged(boolean streaming, String probeUrl);
     }
@@ -93,6 +95,12 @@ public class PlaylistController {
     private ViewGroup webContainer;           // host for the YouTube player (streamed, never downloaded)
     private WebView webView;
     private String loadedWebTarget = null;    // what the WebView currently has loaded (avoid reloads)
+    // Resume support: the YouTube page reports its playback position, so when the connection drops
+    // we can hide the player and later resume from the SAME point instead of restarting.
+    private volatile double webResumeSec = 0;
+    private String webResumeTarget = null;
+    /** Below this, a YouTube/web stream can't play — show the offline screen instead. */
+    private static final double WEB_MIN_MBPS = 1.0;
     private boolean running = false;
     private volatile boolean released = false;
 
@@ -101,7 +109,7 @@ public class PlaylistController {
     private final Map<String, String> streamUrls = new HashMap<>();
 
     // Streaming-video bandwidth state.
-    private volatile double lastMbps = -1;
+    private volatile double lastMbps = Double.NaN;   // NaN = not measured yet (vs -1 = probe failed)
     private boolean streamingVideoActive = false;
     private boolean showingFallback = false;
     private MediaFile streamingVideoFile;
@@ -213,6 +221,24 @@ public class PlaylistController {
         }
 
         // New content has been detected but is NOT downloaded/verified yet.
+
+        // SPECIAL CASE: the scheduled item is web/YouTube, which can never be "downloaded" — it
+        // simply needs internet. If the connection is gone (or too slow to stream) we stop the
+        // player, remember the playback position, and ask the host to show the offline screen.
+        // As soon as the connection is back this same method plays it again, resuming from the
+        // remembered position (see playYouTube's "start" parameter).
+        boolean needsInternet = false;
+        for (MediaFile mf : p.files) { if (mf.isWeb()) { needsInternet = true; break; } }
+        if (needsInternet && !canStreamWeb()) {
+            running = false;
+            currentSignature = "";
+            waitingSignature = "";
+            handler.removeCallbacks(advance);
+            hideWeb();                       // captures webResumeTarget before hiding
+            if (callback != null) callback.onNeedsInternet();
+            return;
+        }
+
         if (isPlayingRealContent()) {
             // UPDATE: keep the CURRENT content playing WITHOUT interruption; only show a small
             // "New content loading..." indicator. We switch to the new content later (via
@@ -387,8 +413,9 @@ public class PlaylistController {
     }
 
     private boolean isPlayable(MediaFile f) {
-        // Web content is streamed, never stored — playable only while there is internet.
-        if (f.isWeb()) return isOnline();
+        // Web content is streamed, never stored — playable only with usable internet
+        // (connected AND fast enough to actually stream).
+        if (f.isWeb()) return canStreamWeb();
         return storage.isDownloaded(f) || streamable.contains(f.localFileName());
     }
 
@@ -521,6 +548,9 @@ public class PlaylistController {
             s.setUseWideViewPort(true);
             webView.setBackgroundColor(Color.BLACK);
             webView.setWebChromeClient(new WebChromeClient()); // required for HTML5 video
+            // Lets our own page report the playback position back to Java (for resume).
+            // The YouTube iframe is a different origin and cannot reach this bridge.
+            webView.addJavascriptInterface(new WebBridge(), "AndroidBridge");
             webContainer.addView(webView, new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         }
@@ -543,8 +573,13 @@ public class PlaylistController {
         //  - it must START muted (browsers/WebView only allow autoplay when muted),
         //  - then we unMute() + setVolume(100) as soon as it is ready, so sound plays,
         //  - and we restart it on ENDED as a safety net so the loop never stops.
+        // Resume from where the connection dropped (same video only), instead of restarting.
+        int startAt = 0;
+        if (targetKey.equals(webResumeTarget) && webResumeSec > 1) startAt = (int) webResumeSec;
+
         String playerVars = "'autoplay':1,'mute':1,'controls':0,'playsinline':1,'modestbranding':1,"
-                + "'rel':0,'iv_load_policy':3,'fs':0,'disablekb':1,'origin':'" + base + "'";
+                + "'rel':0,'iv_load_policy':3,'fs':0,'disablekb':1,'start':" + startAt
+                + ",'origin':'" + base + "'";
         String idVars = !id.isEmpty()
                 ? "videoId:'" + id + "', playerVars:{" + playerVars + ",'loop':1,'playlist':'" + id + "'}"
                 : "playerVars:{" + playerVars + ",'loop':1,'listType':'playlist','list':'" + listId + "'}";
@@ -558,7 +593,11 @@ public class PlaylistController {
                 + idVars + ",events:{"
                 + "'onReady':function(e){try{e.target.unMute();e.target.setVolume(100);}catch(x){}e.target.playVideo();},"
                 + "'onStateChange':function(e){if(e.data===YT.PlayerState.ENDED){e.target.playVideo();}}"
-                + "}});}"
+                + "}});"
+                // Report the playback position to Java every second so we can resume after an
+                // internet drop from the same point rather than from the beginning.
+                + "setInterval(function(){try{if(pl&&pl.getCurrentTime){"
+                + "AndroidBridge.onTime(String(pl.getCurrentTime()));}}catch(x){}},1000);}"
                 + "</script></body></html>";
 
         webView.loadDataWithBaseURL(base, html, "text/html", "utf-8", null);
@@ -569,9 +608,15 @@ public class PlaylistController {
 
     /** Hide and silence the YouTube player when switching to any other content. */
     private void hideWeb() {
-        if (webContainer != null && webContainer.getVisibility() != View.GONE) {
-            webContainer.setVisibility(View.GONE);
+        // Idempotent: this can be called repeatedly (e.g. every schedule tick while offline), so do
+        // nothing if the player is already hidden — reloading about:blank each time is wasteful.
+        if (webContainer == null || webContainer.getVisibility() == View.GONE) {
+            loadedWebTarget = null;
+            return;
         }
+        // Remember where the video was, so we can resume from the same point later.
+        webResumeTarget = loadedWebTarget;
+        webContainer.setVisibility(View.GONE);
         if (webView != null) {
             try { webView.loadUrl("about:blank"); } catch (Throwable ignored) { } // stops audio
         }
@@ -698,6 +743,25 @@ public class PlaylistController {
             return ni != null && ni.isConnected();
         } catch (Throwable t) {
             return false;
+        }
+    }
+
+    /**
+     * Can a web/YouTube stream actually play right now? Needs a connection AND enough bandwidth.
+     * lastMbps < 0 means the probe failed (offline); the large OK sentinel means "fast, unmeasured".
+     */
+    private boolean canStreamWeb() {
+        if (!isOnline()) return false;                  // no connection at all
+        if (Double.isNaN(lastMbps)) return true;        // not measured yet → let it try (app just started)
+        if (lastMbps < 0) return false;                 // probe failed → connected but no usable internet
+        return lastMbps >= WEB_MIN_MBPS;                // too slow to stream → offline screen
+    }
+
+    /** Bridge used by the YouTube page to report its playback position (for resume). */
+    private class WebBridge {
+        @android.webkit.JavascriptInterface
+        public void onTime(String seconds) {
+            try { webResumeSec = Double.parseDouble(seconds); } catch (Exception ignored) { }
         }
     }
 
