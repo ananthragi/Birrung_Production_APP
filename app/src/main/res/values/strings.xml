@@ -3,7 +3,7 @@
     <!--    <string name="app_name">CynergyTx Admin</string>-->
     <string name="welcomeback">Welcome to Birrung</string>
     <string name="email">Email</string>
-    <string name="email_add">License Key </string>
+    <string name="email_add">Activation Code</string>
     <string name="email_add1">Email Address <font fgcolor='#feb501'>*</font></string>
     <string name="password">Password</string>
     <string name="myname">My Name</string>

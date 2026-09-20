@@ -72,6 +72,14 @@ public class LoginActivity extends AppCompatActivity  {
     ExoPlayer logoPlayer;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    // ---- Low internet indicator (same behaviour as the player screen) ----
+    private ImageView lowSpeedDot;
+    private com.cilpl.Cynergytx_admin.signage.net.NetworkSpeedMonitor speedMonitor;
+    private final Handler dotHandler = new Handler(Looper.getMainLooper());
+    private boolean lowActive = false;
+    private static final long DOT_VISIBLE_MS = 10_000L;  // icon stays on screen 10s
+    private static final long DOT_HIDDEN_MS = 20_000L;   // then hides 20s -> ~2 blinks per minute
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +90,57 @@ public class LoginActivity extends AppCompatActivity  {
         hideSystemUI();
         InitViews();
         onClicks();
+        startSpeedMonitor();
+    }
+
+    // ---------------- Low internet indicator ----------------
+
+    /**
+     * Watches the connection while the activation screen is on display and shows the same
+     * bottom-right "no wifi" icon the player screen uses, so the installer can tell straight
+     * away that the box has no usable internet before entering the activation code.
+     */
+    private void startSpeedMonitor() {
+        lowSpeedDot = findViewById(R.id.lowSpeedDot);
+        if (lowSpeedDot == null) return;
+        speedMonitor = new com.cilpl.Cynergytx_admin.signage.net.NetworkSpeedMonitor(
+                this, (mbps, linkSpeed) -> {
+            if (isFinishing() || isDestroyed()) return;
+            // <= 5 Mbps (which also covers offline, reported as -1) -> show the icon.
+            if (mbps <= 5.0) startLowSpeedIndicator();
+            else stopLowSpeedIndicator();
+        });
+        speedMonitor.start();
+    }
+
+    // The icon blinks: visible 10s, hidden 20s (~2 times a minute) while the connection is low.
+    private final Runnable dotShowStep = new Runnable() {
+        @Override public void run() {
+            if (!lowActive || lowSpeedDot == null) return;
+            lowSpeedDot.setVisibility(View.VISIBLE);
+            dotHandler.postDelayed(dotHideStep, DOT_VISIBLE_MS);
+        }
+    };
+    private final Runnable dotHideStep = new Runnable() {
+        @Override public void run() {
+            if (lowSpeedDot != null) lowSpeedDot.setVisibility(View.GONE);
+            if (lowActive) dotHandler.postDelayed(dotShowStep, DOT_HIDDEN_MS);
+        }
+    };
+
+    private void startLowSpeedIndicator() {
+        if (lowActive) return;
+        lowActive = true;
+        dotHandler.removeCallbacks(dotShowStep);
+        dotHandler.removeCallbacks(dotHideStep);
+        dotHandler.post(dotShowStep);   // show immediately on the first low reading
+    }
+
+    private void stopLowSpeedIndicator() {
+        lowActive = false;
+        dotHandler.removeCallbacks(dotShowStep);
+        dotHandler.removeCallbacks(dotHideStep);
+        if (lowSpeedDot != null) lowSpeedDot.setVisibility(View.GONE);
     }
 
     private void onClicks() {
@@ -363,6 +422,10 @@ public class LoginActivity extends AppCompatActivity  {
     protected void onDestroy() {
         super.onDestroy();
         uiHandler.removeCallbacksAndMessages(null);
+        // Stop the probe thread and the blink timer before the player screen starts its own monitor.
+        dotHandler.removeCallbacksAndMessages(null);
+        lowActive = false;
+        if (speedMonitor != null) { speedMonitor.stop(); speedMonitor = null; }
         if (loadingAnim != null) { loadingAnim.cancel(); loadingAnim = null; }
         if (loadingDialog != null && loadingDialog.isShowing()) loadingDialog.dismiss();
         if (logoPlayer != null) {
@@ -376,7 +439,7 @@ public class LoginActivity extends AppCompatActivity  {
 
 
         if (email.isEmpty() || email.equals(" ")) {
-            email_id.setError("Enter Your License Key");
+            email_id.setError("Enter Your Activation Code");
             return false;
         }
 

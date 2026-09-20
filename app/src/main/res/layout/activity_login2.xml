@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- FrameLayout (not LinearLayout) so the low-internet icon can overlay the bottom-right corner. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="center"
     android:background="@drawable/splashimage"
-    android:orientation="vertical"
     tools:context=".Activites.LoginActivity">
 
     <androidx.core.widget.NestedScrollView
@@ -149,4 +149,21 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-</LinearLayout>
+
+    <!-- Low internet speed indicator: small, semi-transparent "no wifi" icon, bottom-right
+         (blinks ~2x/minute while internet is <= 5 Mbps / offline). Same behaviour as the
+         player screen, so the installer can see the connection state before activating. -->
+    <ImageView
+        android:id="@+id/lowSpeedDot"
+        android:layout_width="@dimen/_14sdp"
+        android:layout_height="@dimen/_14sdp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/_10sdp"
+        android:layout_marginRight="@dimen/_10sdp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:alpha="0.6"
+        android:scaleType="fitCenter"
+        android:src="@drawable/no_wifi"
+        android:visibility="gone" />
+
+</FrameLayout>
