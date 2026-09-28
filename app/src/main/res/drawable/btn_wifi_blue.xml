@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Configure Wi-Fi" button. Solid blue with a darker focus/press state so it is
+     obviously selected when driven by a TV remote. The label is always white. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#01508A" />
+            <stroke android:width="2dp" android:color="#FFFFFF" />
+            <corners android:radius="@dimen/_10sdp" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#01508A" />
+            <corners android:radius="@dimen/_10sdp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0170C1" />
+            <corners android:radius="@dimen/_10sdp" />
+        </shape>
+    </item>
+</selector>

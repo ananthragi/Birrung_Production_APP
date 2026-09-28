@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -72,6 +73,23 @@ public class LoginActivity extends AppCompatActivity  {
     ExoPlayer logoPlayer;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    // ---- Connectivity status, Wi-Fi shortcut and inline activation error ----
+    private View activationErrorBox, offlineMessage, configureWifiBtn;
+    private TextView activationErrorText, backOnlineStrip;
+    // Connectivity is decided by an ACTUAL reachability probe, not the system's "validated"
+    // flag: when the router loses internet but the box stays associated to the access point,
+    // that flag stays stale for a long time and reports a false Online.
+    private boolean networkPresent = false;    // an interface exists (instant, from the OS)
+    private Boolean internetReachable = null;  // null = not probed yet; from NetworkSpeedMonitor
+    private boolean inForeground = false;
+    private boolean awaitingWifiReturn = false;
+    private boolean pendingBackOnline = false;
+    private final Handler netHandler = new Handler(Looper.getMainLooper());
+    private android.net.ConnectivityManager connMgr;
+    private android.net.ConnectivityManager.NetworkCallback netCallback;
+    private Boolean lastOnline = null;               // null = not evaluated yet
+    private static final long BACK_ONLINE_MS = 3000L; // how long the green strip stays up
+
     // ---- Low internet indicator (same behaviour as the player screen) ----
     private ImageView lowSpeedDot;
     private com.cilpl.Cynergytx_admin.signage.net.NetworkSpeedMonitor speedMonitor;
@@ -91,6 +109,196 @@ public class LoginActivity extends AppCompatActivity  {
         InitViews();
         onClicks();
         startSpeedMonitor();
+        initConnectivity();
+    }
+
+    // ---------------- Connectivity status + Wi-Fi shortcut ----------------
+
+    private void initConnectivity() {
+        offlineMessage = findViewById(R.id.offlineMessage);
+        configureWifiBtn = findViewById(R.id.configureWifiBtn);
+        backOnlineStrip = findViewById(R.id.backOnlineStrip);
+        activationErrorBox = findViewById(R.id.activationErrorBox);
+        activationErrorText = findViewById(R.id.activationErrorText);
+
+        if (configureWifiBtn != null) configureWifiBtn.setOnClickListener(v -> openWifiSettings());
+
+        connMgr = (android.net.ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        registerNetworkCallback();
+        networkPresent = hasNetwork();
+        applyConnectivity();
+    }
+
+    /** Combines the OS view (is there a network at all?) with the probe (does it reach the internet?). */
+    private boolean computeOnline() {
+        if (!networkPresent) return false;                 // no interface -> definitely offline
+        if (internetReachable == null) return isOnline();  // not probed yet -> best available guess
+        return internetReachable;
+    }
+
+    private void applyConnectivity() { updateConnectivity(computeOnline()); }
+
+    /** True when any usable network interface exists (instant, but says nothing about the internet). */
+    private boolean hasNetwork() {
+        try {
+            if (connMgr == null) return false;
+            android.net.Network n = connMgr.getActiveNetwork();
+            if (n == null) return false;
+            android.net.NetworkCapabilities c = connMgr.getNetworkCapabilities(n);
+            return c != null
+                    && c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** The system's own opinion. Used only until the first probe result arrives. */
+    private boolean isOnline() {
+        try {
+            if (connMgr == null) return false;
+            android.net.Network n = connMgr.getActiveNetwork();
+            if (n == null) return false;
+            android.net.NetworkCapabilities c = connMgr.getNetworkCapabilities(n);
+            return c != null
+                    && c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    && c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Live connectivity updates while the screen is open (the system calls these off the main thread). */
+    private void registerNetworkCallback() {
+        if (connMgr == null || netCallback != null) return;
+        netCallback = new android.net.ConnectivityManager.NetworkCallback() {
+            @Override public void onAvailable(@NonNull android.net.Network network) { post(); }
+            @Override public void onLost(@NonNull android.net.Network network) { post(); }
+            @Override public void onCapabilitiesChanged(@NonNull android.net.Network network,
+                                                        @NonNull android.net.NetworkCapabilities caps) { post(); }
+            private void post() {
+                netHandler.post(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    boolean present = hasNetwork();
+                    if (!present) internetReachable = false;  // interface gone -> offline right away
+                    networkPresent = present;
+                    applyConnectivity();
+                    // A network just appeared: probe now rather than waiting for the timer.
+                    if (present && speedMonitor != null) speedMonitor.pokeNow();
+                });
+            }
+        };
+        try {
+            connMgr.registerNetworkCallback(
+                    new android.net.NetworkRequest.Builder()
+                            .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                            .build(),
+                    netCallback);
+        } catch (Throwable t) {
+            netCallback = null;   // fall back to the onResume re-check
+        }
+    }
+
+    /**
+     * Applies the current connection state to the screen: status indicator, the offline guidance
+     * and Wi-Fi button, and the transient "Back online" strip when the connection is restored.
+     */
+    private void updateConnectivity(boolean online) {
+        boolean wasOffline = (lastOnline != null && !lastOnline);
+        lastOnline = online;
+
+        // There is no "Online" badge: the connection is only called out when it is a problem
+        // (the offline guidance) or when it has just been fixed (the green strip). While
+        // offline the existing no_wifi corner icon is the standing indicator.
+        int offVis = online ? View.GONE : View.VISIBLE;
+        if (offlineMessage != null) offlineMessage.setVisibility(offVis);
+        if (configureWifiBtn != null) configureWifiBtn.setVisibility(offVis);
+
+        if (online && wasOffline) {
+            // Back after being sent to the Wi-Fi settings: pull this screen forward again so
+            // the user does not have to find their own way back.
+            if (awaitingWifiReturn && !inForeground) bringToFront();
+            showBackOnline();
+        }
+    }
+
+    private final Runnable hideBackOnline = new Runnable() {
+        @Override public void run() {
+            if (backOnlineStrip != null) backOnlineStrip.setVisibility(View.GONE);
+            // Let the low-speed icon resume its own cycle once the strip is out of the way.
+            if (lowActive && lowSpeedDot != null) lowSpeedDot.setVisibility(View.VISIBLE);
+        }
+    };
+
+    private void showBackOnline() {
+        if (backOnlineStrip == null) return;
+        if (!inForeground) { pendingBackOnline = true; return; }  // show it once we are visible
+        pendingBackOnline = false;
+        // The strip occupies the bottom edge, where the low-speed icon also sits: hide the icon
+        // for the few seconds the strip is up so the two never overlap.
+        if (lowSpeedDot != null) lowSpeedDot.setVisibility(View.GONE);
+        backOnlineStrip.setVisibility(View.VISIBLE);
+        netHandler.removeCallbacks(hideBackOnline);
+        netHandler.postDelayed(hideBackOnline, BACK_ONLINE_MS);
+    }
+
+    /**
+     * Opens the Wi-Fi settings. Android TV boxes and phones expose this differently, so the
+     * options are tried in order and the first one the device accepts is used.
+     */
+    private void openWifiSettings() {
+        awaitingWifiReturn = true;
+        String[] actions = {
+                android.provider.Settings.ACTION_WIFI_SETTINGS,        // phones + most TV boxes
+                "android.settings.panel.action.WIFI",                  // Android 10+ slide-up panel
+                android.provider.Settings.ACTION_WIRELESS_SETTINGS,
+                android.provider.Settings.ACTION_SETTINGS              // last resort
+        };
+        for (String action : actions) {
+            try {
+                // Deliberately NO FLAG_ACTIVITY_NEW_TASK: keeping the settings screen in this
+                // app's task is what lets us legally call ourselves back to the front when the
+                // connection returns (Android 10+ blocks background activity starts otherwise).
+                startActivity(new Intent(action));
+                return;
+            } catch (Throwable ignored) { }
+        }
+        Toast.makeText(this, "Unable to open Wi-Fi settings", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Brings this screen back to the front after the user has enabled Wi-Fi in the settings.
+     * Best effort: it works when the settings screen opened inside this app's task. Some
+     * devices force it into a task of its own, and there the user simply presses Back --
+     * onResume() re-checks the connection either way, so nothing is missed.
+     */
+    private void bringToFront() {
+        try {
+            Intent i = new Intent(this, LoginActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(i);
+        } catch (Throwable ignored) { }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        inForeground = false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        inForeground = true;
+        awaitingWifiReturn = false;
+        if (pendingBackOnline) showBackOnline();   // connection returned while we were hidden
+        // The user may have just come back from the Wi-Fi settings: re-check and update.
+        hideSystemUI();   // settings may have restored the system bars
+        if (connMgr != null) {
+            networkPresent = hasNetwork();
+            applyConnectivity();
+        }
+        if (speedMonitor != null) speedMonitor.pokeNow();   // confirm with a fresh probe
     }
 
     // ---------------- Low internet indicator ----------------
@@ -109,6 +317,11 @@ public class LoginActivity extends AppCompatActivity  {
             // <= 5 Mbps (which also covers offline, reported as -1) -> show the icon.
             if (mbps <= 5.0) startLowSpeedIndicator();
             else stopLowSpeedIndicator();
+
+            // The probe actually fetches bytes over the internet, so a failure (-1) means
+            // genuinely unreachable even while the box is still associated to the Wi-Fi.
+            internetReachable = mbps >= 0;
+            applyConnectivity();
         });
         speedMonitor.start();
     }
@@ -148,6 +361,7 @@ public class LoginActivity extends AppCompatActivity  {
             @Override
             public void onClick(View view) {
 
+                clearActivationError();
                 if (Validation()) {
                     // signbtn.setBackground(getResources().getDrawable(R.drawable.btn_bg));
 //
@@ -336,49 +550,24 @@ public class LoginActivity extends AppCompatActivity  {
         }, 250);
     }
 
-    /** Styled "Activation Failed" popup showing the server's message (matches the client design). */
+    /**
+     * Shows the activation failure inline, directly under the submit button: a red error icon
+     * with the server's message. Replaces the old full-screen popup, which needed a remote
+     * click to dismiss and covered the code the user was trying to correct.
+     */
     private void showActivationError(String message) {
         if (isFinishing() || isDestroyed()) return;
         if (message == null || message.trim().isEmpty()) {
-            message = "The activation code is currently active in another screen. "
-                    + "Please use different code or Deactivate the existing session.";
+            message = "Invalid Activation code";
         }
+        if (activationErrorBox == null || activationErrorText == null) return;
+        activationErrorText.setText(message.trim());
+        activationErrorBox.setVisibility(View.VISIBLE);
+    }
 
-        final Dialog dialog = new Dialog(LoginActivity.this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_activation_failed);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT);
-        }
-        dialog.setCancelable(true);
-
-        ImageView img = dialog.findViewById(R.id.activationImage);
-        TextView title = dialog.findViewById(R.id.activationTitle);
-        TextView msg = dialog.findViewById(R.id.activationMessage);
-        Button ok = dialog.findViewById(R.id.activationOk);
-
-        // Prefer the client's supplied image (which already contains the heading + message).
-        int resId = getResources().getIdentifier("activation_failed", "drawable", getPackageName());
-        if (resId != 0 && img != null) {
-            img.setImageResource(resId);
-            ViewGroup.LayoutParams lp = img.getLayoutParams();
-            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            img.setLayoutParams(lp);
-            img.setAdjustViewBounds(true);
-            if (title != null) title.setVisibility(View.GONE);   // baked into the image
-            if (msg != null) msg.setVisibility(View.GONE);       // baked into the image
-        } else {
-            // Fallback until the image is added: built-in graphic + the server's message text.
-            if (msg != null) msg.setText(message);
-        }
-
-        if (ok != null) ok.setOnClickListener(v -> dialog.dismiss());
-
-        dialog.show();
+    /** Clears the inline error (on a new attempt, or as soon as the code is edited). */
+    private void clearActivationError() {
+        if (activationErrorBox != null) activationErrorBox.setVisibility(View.GONE);
     }
 
     /** Show the client's logo video (res/raw/splash_logo.mp4) looping seamlessly & muted; else the static logo. */
@@ -424,8 +613,13 @@ public class LoginActivity extends AppCompatActivity  {
         uiHandler.removeCallbacksAndMessages(null);
         // Stop the probe thread and the blink timer before the player screen starts its own monitor.
         dotHandler.removeCallbacksAndMessages(null);
+        netHandler.removeCallbacksAndMessages(null);
         lowActive = false;
         if (speedMonitor != null) { speedMonitor.stop(); speedMonitor = null; }
+        if (connMgr != null && netCallback != null) {
+            try { connMgr.unregisterNetworkCallback(netCallback); } catch (Throwable ignored) { }
+            netCallback = null;
+        }
         if (loadingAnim != null) { loadingAnim.cancel(); loadingAnim = null; }
         if (loadingDialog != null && loadingDialog.isShowing()) loadingDialog.dismiss();
         if (logoPlayer != null) {
@@ -458,6 +652,13 @@ public class LoginActivity extends AppCompatActivity  {
         originalBtnTextColor = signbtn.getCurrentTextColor();
 //        signupPage = findViewById(R.id.signupPage);
         email_id = findViewById(R.id.email_id);
+
+        // Editing the code clears a previous failure, so the message never contradicts the field.
+        email_id.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { clearActivationError(); }
+            @Override public void afterTextChanged(android.text.Editable s) { }
+        });
 
         setupLogoVideo();
         offlineplayer = findViewById(R.id.offlineplayer);

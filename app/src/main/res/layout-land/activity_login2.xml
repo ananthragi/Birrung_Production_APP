@@ -127,6 +127,74 @@
                         android:textAllCaps="false"
                         android:textColor="@color/white"
                         android:textSize="@dimen/_8sdp" />
+
+                    <!-- Inline activation error (replaces the old popup): icon + server message,
+                         shown directly under the submit button. -->
+                    <LinearLayout
+                        android:id="@+id/activationErrorBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:background="@drawable/bg_error_inline"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/_5sdp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/activationErrorIcon"
+                            android:layout_width="@dimen/_10sdp"
+                            android:layout_height="@dimen/_10sdp"
+                            android:layout_marginEnd="@dimen/_5sdp"
+                            android:src="@drawable/ic_error_inline" />
+
+                        <TextView
+                            android:id="@+id/activationErrorText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="#C62828"
+                            android:textSize="@dimen/_7sdp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Connectivity: status indicator, offline guidance and a route to Wi-Fi settings. -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+
+                        <TextView
+                            android:id="@+id/offlineMessage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/_4sdp"
+                            android:gravity="center"
+                            android:text="@string/offline_configure_wifi"
+                            android:textColor="@color/grey"
+                            android:textSize="@dimen/_7sdp"
+                            android:visibility="gone" />
+
+                        <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                            android:id="@+id/configureWifiBtn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="@dimen/_20sdp"
+                            android:layout_marginTop="@dimen/_5sdp"
+                            android:background="@drawable/btn_wifi_blue"
+                            android:focusable="true"
+                            android:minWidth="0dp"
+                            android:paddingStart="@dimen/_10sdp"
+                            android:paddingEnd="@dimen/_10sdp"
+                            android:text="@string/configure_wifi"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_7sdp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
                     <com.cilpl.Cynergytx_admin.utils.TwCenMTBold
                         android:id="@+id/offlineplayer"
                         android:layout_width="wrap_content"
@@ -145,6 +213,21 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Transient green confirmation shown when the connection comes back. -->
+    <TextView
+        android:id="@+id/backOnlineStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#1E8E3E"
+        android:gravity="center"
+        android:padding="@dimen/_4sdp"
+        android:text="@string/back_online"
+        android:textColor="@color/white"
+        android:textSize="@dimen/_8sdp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
     <!-- Low internet speed indicator: small, semi-transparent "no wifi" icon, bottom-right
          (blinks ~2x/minute while internet is <= 5 Mbps / offline). Same behaviour as the
