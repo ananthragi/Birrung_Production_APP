@@ -95,6 +95,14 @@ public class ContentSyncManager {
                     continue;
                 }
 
+                // A raw PowerPoint deck is never rendered -- the backend sends its slides as
+                // separate images. Downloading the deck would waste bandwidth and storage on a
+                // file nothing can display. (Defensive: schedules now carry slides, not decks.)
+                if (f.isPpt()) {
+                    main.post(() -> cb.onFileReady(f));
+                    continue;
+                }
+
                 // Already on disk?
                 //  - ONLINE: verify it's complete & playable; if broken, delete it and re-download.
                 //  - OFFLINE: NEVER validate/delete it. We cannot re-fetch it, and some media-player

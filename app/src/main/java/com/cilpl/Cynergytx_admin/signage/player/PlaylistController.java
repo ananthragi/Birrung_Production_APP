@@ -416,6 +416,10 @@ public class PlaylistController {
         // Web content is streamed, never stored — playable only with usable internet
         // (connected AND fast enough to actually stream).
         if (f.isWeb()) return canStreamWeb();
+        // A raw .ppt/.pptx can never be rendered -- only the slide images the backend derives
+        // from it. Without this it reaches the final "else" branch below, which is the image
+        // loader, and fails to decode. Returning false keeps it out of the rotation entirely.
+        if (f.isPpt()) return false;
         return storage.isDownloaded(f) || streamable.contains(f.localFileName());
     }
 

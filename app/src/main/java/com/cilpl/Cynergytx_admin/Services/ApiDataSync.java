@@ -1460,7 +1460,12 @@ public class ApiDataSync {
 
                 JSONArray scheduleArray = jsonObject.getJSONArray("data"); // your API field
                 SharedPreferences.Editor editor1 = userdata.edit();
-                editor1.putString("schedule_json", scheduleArray.toString());
+                // This endpoint can return a PowerPoint deck without its slides (as type
+                // "unknown format"), which would otherwise wipe out slides we already hold
+                // and leave the screen empty. Keep the slides for a deck we already know.
+                String scheduleJson = com.cilpl.Cynergytx_admin.signage.model.ContentSchedule
+                        .preservePptSlides(scheduleArray, userdata.getString("schedule_json", ""));
+                editor1.putString("schedule_json", scheduleJson);
                 editor1.putString("mqttServer", mqttServerurl);
                 editor1.apply();
                 editor1.commit();

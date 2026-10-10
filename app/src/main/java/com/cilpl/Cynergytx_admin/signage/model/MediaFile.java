@@ -72,13 +72,26 @@ public class MediaFile {
         return isYouTube() || "url".equalsIgnoreCase(type) || "web".equalsIgnoreCase(type);
     }
 
+    /**
+     * A PowerPoint deck. The app never renders these itself: the backend converts each deck
+     * into PNG slides and sends them in "pptData", which {@code ContentSchedule} expands into
+     * ordinary image items. This exists so a raw .ppt URL can be recognised and skipped rather
+     * than being mistaken for an image and handed to the image loader.
+     */
+    public boolean isPpt() {
+        if (isWeb()) return false;
+        String e = urlExt();
+        return "ppt".equalsIgnoreCase(type) || "pptx".equalsIgnoreCase(type)
+                || e.equals(".ppt") || e.equals(".pptx");
+    }
+
     public boolean isPdf() {
         if (isWeb()) return false;
         return "pdf".equalsIgnoreCase(type) || urlExt().equals(".pdf");
     }
 
     public boolean isVideo() {
-        if (isWeb() || isPdf()) return false;
+        if (isWeb() || isPdf() || isPpt()) return false;
         if ("video".equalsIgnoreCase(type)) return true;
         switch (urlExt()) {
             case ".mp4": case ".mkv": case ".webm": case ".3gp": case ".mov": case ".m4v":
@@ -88,7 +101,7 @@ public class MediaFile {
     }
 
     public boolean isImage() {
-        if (isWeb() || isPdf() || isVideo()) return false; // never misclassify these as an image
+        if (isWeb() || isPdf() || isPpt() || isVideo()) return false; // never misclassify these
         if ("image".equalsIgnoreCase(type)) return true;
         switch (urlExt()) {
             case ".jpg": case ".jpeg": case ".png": case ".webp": case ".gif": case ".bmp":
