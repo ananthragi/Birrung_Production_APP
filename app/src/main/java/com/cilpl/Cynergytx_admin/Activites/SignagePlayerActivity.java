@@ -376,6 +376,17 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         }
 
         alertYes.setOnClickListener(v -> {
+            // Tell the server first, while the sessionId is still available: clearing prefs
+            // below wipes it. The request is queued on the application-wide Volley queue, so
+            // it still completes after this activity is torn down. Nothing waits on it --
+            // the device logs out locally even if the server is unreachable.
+            try {
+                new com.cilpl.Cynergytx_admin.Services.ApiDataSync(SignagePlayerActivity.this)
+                        .LogoutApiCall(prefs.getString("sessionId", ""));
+            } catch (Throwable t) {
+                android.util.Log.e("LogoutApi", "call skipped: " + t.getMessage());
+            }
+
             if (mqttHelper != null) mqttHelper.disconnect();
             SharedPreferences.Editor editor = prefs.edit();
             editor.clear();

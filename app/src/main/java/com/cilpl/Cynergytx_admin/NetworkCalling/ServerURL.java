@@ -134,8 +134,11 @@ public class ServerURL {
         return start_url + "/getSlotinfo";
     }
     public static String logout() {
-
-        return start_url + "/logout";
+        // Screen logout endpoint (replaced /logout). No leading slash on the path here:
+        // start_url already ends in "/", and the other endpoints in this file end up with a
+        // double slash because of it. The server tolerates that, but this one is spelt exactly
+        // as the backend team specified: https://birrung.com.au/screen_logout
+        return start_url + "screen_logout";
     }
 
     public static String Addtocart() {

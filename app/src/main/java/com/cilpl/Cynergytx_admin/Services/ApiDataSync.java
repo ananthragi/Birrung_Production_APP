@@ -303,6 +303,58 @@ public class ApiDataSync {
     }
 
 
+    /**
+     * Tells the server this screen is logging out, so the backend can release the activation
+     * code for use on another screen. Fire-and-forget: the device logs out locally whatever the
+     * server replies, so a backend problem can never trap the user on the player screen.
+     *
+     * The response is logged under the "LogoutApi" tag for field testing.
+     */
+    public void LogoutApiCall(String sessionId) {
+        try {
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                Log.e("LogoutApi", "skipped: no sessionId stored on this device");
+                return;
+            }
+            String url = ServerURL.logout();
+            HashMap<String, String> hashMap = new HashMap<>();
+            // NB: screen_logout expects "sessionId" -- unlike /apklogin, which spells it
+            // "sessioId". Confirmed against the backend; do not "correct" one to match the other.
+            hashMap.put("sessionId", sessionId);
+            Log.e("LogoutApi", "POST " + url + "  sessioId=" + sessionId);
+
+            NetworkServiceCall serviceCall = new NetworkServiceCall(context, false);
+            serviceCall.setOnServiceCallCompleteListener(new LogoutCallCompleteListener());
+            serviceCall.makeJSONObjectPostStringRequest(url, hashMap, Request.Priority.HIGH);
+        } catch (Exception e) {
+            Log.e("LogoutApi", "request failed to start: " + e.getMessage());
+        }
+    }
+
+    private class LogoutCallCompleteListener implements OnServiceCallCompleteListener {
+        @Override
+        public void onJSONObjectResponse(JSONObject jsonObject) {
+            Log.e("LogoutApi", "response: " + jsonObject);
+        }
+
+        @Override
+        public void onJSONArrayResponse(JSONArray jsonArray) {
+            Log.e("LogoutApi", "response (array): " + jsonArray);
+        }
+
+        @Override
+        public void onErrorResponse(VolleyError error) {
+            String body = "";
+            try {
+                if (error != null && error.networkResponse != null) {
+                    body = " http=" + error.networkResponse.statusCode
+                            + " body=" + new String(error.networkResponse.data);
+                }
+            } catch (Exception ignored) { }
+            Log.e("LogoutApi", "error: " + (error == null ? "null" : error.getMessage()) + body);
+        }
+    }
+
     public void GetListDetails() {
         try {
             String confirmpass = ServerURL.GetProfile();
