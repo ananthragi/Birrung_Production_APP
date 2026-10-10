@@ -557,11 +557,17 @@ public class LoginActivity extends AppCompatActivity  {
      */
     private void showActivationError(String message) {
         if (isFinishing() || isDestroyed()) return;
-        if (message == null || message.trim().isEmpty()) {
-            message = "Invalid Activation code";
-        }
         if (activationErrorBox == null || activationErrorText == null) return;
-        activationErrorText.setText(message.trim());
+
+        String text = message == null ? "" : message.trim();
+        // The server's wording for a bad code is terse and tells the user nothing about what to
+        // do next, so that one case is replaced with the agreed sentence. Any other message the
+        // server sends (a duplicate login, for example) is genuinely informative and is shown
+        // as-is rather than being flattened into the generic text.
+        if (text.isEmpty() || text.toLowerCase().contains("invalid activation code")) {
+            text = getString(R.string.invalid_activation_code);
+        }
+        activationErrorText.setText(text);
         activationErrorBox.setVisibility(View.VISIBLE);
     }
 

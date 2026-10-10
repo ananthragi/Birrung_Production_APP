@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Red circle with an exclamation mark: the error icon beside the activation message. -->
+<!-- Red warning triangle with an exclamation mark: the icon beside the activation error. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
     <path android:fillColor="#E63329"
-        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2z" />
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M11,6h2v8h-2z" />
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M11,16h2v2h-2z" />
+        android:pathData="M12.87,3.5c-0.39,-0.67 -1.35,-0.67 -1.73,0L1.34,20.5C0.96,21.17 1.44,22 2.21,22h19.58c0.77,0 1.25,-0.83 0.87,-1.5L12.87,3.5z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M11,9h2v6h-2z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M11,17h2v2h-2z" />
 </vector>

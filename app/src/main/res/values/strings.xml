@@ -283,7 +283,8 @@
     <string name="send_praposal">Praposals</string>
     <string name="if_you_dont_have_key_click_here">If You dont have Key <font fgcolor='#feb501'>Click Here</font></string>
     <!-- Activation screen: connectivity status + inline activation error -->
-    <string name="offline_configure_wifi">You are currently offline. Configure your Wi-Fi.</string>
-    <string name="configure_wifi">Configure Wi-Fi</string>
+    <string name="offline_configure_wifi">System is currently offline</string>
+    <string name="configure_wifi">Connect me to Internet</string>
     <string name="back_online">Back online</string>
+    <string name="invalid_activation_code">Invalid Activation Code. Please check and try again!</string>
 </resources>
