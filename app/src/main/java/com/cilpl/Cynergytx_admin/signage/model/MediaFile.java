@@ -130,9 +130,27 @@ public class MediaFile {
      * and the new one is downloaded. Presence of this exact file == "up to date".
      */
     public String localFileName() {
-        String safeId = sanitize(id.isEmpty() ? ("f" + Integer.toHexString(url.hashCode())) : id);
-        String safeVer = version.isEmpty() ? "v0" : sanitize(version);
-        return safeId + "_" + safeVer + extension();
+        String safeId = sanitize(id.isEmpty() ? "f" : id);
+        return safeId + "_" + urlFingerprint() + extension();
+    }
+
+    /**
+     * Short, stable fingerprint of the content URL. This replaces the backend's "version" in the
+     * local filename, and it is what makes caching reliable.
+     *
+     * The login and refresh endpoints do not agree about "version" -- one sends "1.0", the other
+     * sends nothing -- so building the name from it meant the SAME file mapped to two different
+     * names (…_1.0.mp4 and …_v0.mp4). The app downloaded under one name, looked for the other,
+     * found nothing and showed a stuck loader; worse, each sync evicted the other's files as
+     * unreferenced, so the two payloads kept deleting each other's downloads forever.
+     *
+     * The URL identifies the content and this backend already changes it whenever content is
+     * replaced (screenFile&lt;timestamp&gt;.pptx, ppt_slides/&lt;deck hash&gt;/…), so it versions
+     * correctly on its own. A replaced file that somehow kept its URL is still caught by the
+     * fileSize check in isDownloaded().
+     */
+    private String urlFingerprint() {
+        return Integer.toHexString(url.hashCode());
     }
 
     public String extension() {

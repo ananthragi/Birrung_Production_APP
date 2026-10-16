@@ -136,7 +136,7 @@ public class ContentSchedule {
 
             JSONObject f = new JSONObject();
             try {
-                f.put("id", "slot" + i + "_" + Integer.toHexString(s.optString("url", "").hashCode()));
+                f.put("id", "slot" + i);
                 f.put("type", s.optString("type", ""));
                 f.put("url", s.optString("url", ""));
                 f.put("order", 1);
@@ -241,14 +241,20 @@ public class ContentSchedule {
                 // Slide URLs live under a per-deck hash directory, so replacing the deck
                 // produces new URLs -> new ids -> new local filenames -> automatic
                 // re-download, with the old slides evicted as unreferenced.
-                f.put("id", "ppt" + slotIndex + "_s" + slideNo + "_"
-                        + Integer.toHexString(url.hashCode()));
+                f.put("id", "ppt" + slotIndex + "_s" + slideNo);
                 f.put("type", "image");   // every slide is a pre-rendered PNG
                 f.put("url", url);
                 f.put("fileSize", sl.optLong("fileSize", 0));
                 f.put("order", slideNo);
                 f.put("imageDuration", sl.optInt("duration", 0));  // 0 -> MediaFile's default
-                f.put("version", slot.optString("version", slot.optString("checksum", "")));
+                // Deliberately NO "version": the local filename is built from id + version, and
+                // the two endpoints do not agree on the slot's version field (the login payload
+                // carries "1.0", the refresh payload carries none). That made the SAME slide map
+                // to two different filenames -- ppt0_s2_<hash>_1.0.png and ppt0_s2_<hash>_v0.png --
+                // so content downloaded under one name was invisible under the other, the player
+                // had nothing to show, and each sync evicted what the previous one had fetched.
+                // The id above already encodes the slide URL, which contains the per-deck content
+                // hash, so it is a complete version marker on its own.
             } catch (Exception ignored) { }
             slides.add(MediaFile.fromJson(f));
         }
