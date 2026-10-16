@@ -487,6 +487,16 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
                 controller.setStreamable(streamNames, streamUrls);
 
                 Playlist active = schedule.getActivePlaylist();
+                // Why the screen did or did not start playing after a sync -- the single most
+                // useful line when the loader appears stuck.
+                if (active == null) {
+                    Log.e(TAG, "After sync: no active playlist for this time -> no-content screen");
+                } else {
+                    int onDisk = 0;
+                    for (MediaFile f : active.files) if (storage.isDownloaded(f)) onDisk++;
+                    Log.e(TAG, "After sync: active playlist '" + active.id + "' has "
+                            + active.files.size() + " file(s), " + onDisk + " present on disk");
+                }
                 if (active != null) controller.setPlaylist(active);
                 else { controller.stop(); showNoSession(); }
 

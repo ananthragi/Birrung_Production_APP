@@ -11,7 +11,9 @@ import com.cilpl.Cynergytx_admin.signage.storage.LocalStorageManager;
 import com.cilpl.Cynergytx_admin.signage.storage.MediaDownloadManager;
 import com.cilpl.Cynergytx_admin.signage.storage.MediaValidator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +32,11 @@ import java.util.concurrent.Executors;
 public class ContentSyncManager {
 
     private static final String TAG = "ContentSync";
+
+    /** Reports overall download progress for the active session (see the pre-pass in sync()). */
+    private interface ProgressEmitter {
+        void emit(long currentDone, long currentTotal, MediaFile file);
+    }
 
     public interface SyncCallback {
         void onFileReady(MediaFile file);   // a file just became available locally
@@ -73,7 +80,62 @@ public class ContentSyncManager {
             Set<String> activeNames = new HashSet<>();
             if (active != null) for (MediaFile f : active.files) activeNames.add(f.localFileName());
 
+            // ---- Progress is measured across the WHOLE active session, not per file ----
+            // Previously each active file reported its own 0..100, so the bar restarted for
+            // every file (it looked like the loader ran twice), and a file whose size was
+            // unknown reported -1, which left the bar frozen at the previous file's 100%.
+            // Measuring the session as one job fixes both.
+            final List<MediaFile> pending = new ArrayList<>();
+            if (active != null) {
+                for (MediaFile f : active.files) {
+                    if (f.url == null || f.url.isEmpty()) continue;
+                    if (f.isWeb() || f.isPpt()) continue;          // never downloaded
+                    if (storage.isDownloaded(f)) {
+                        // Size check only. A full MediaValidator pass here would repeat the
+                        // expensive metadata scan the download loop already runs for files with
+                        // no declared size -- doubling it on every sync. Sizing the job is an
+                        // estimate, so the cheap check is enough.
+                        if (f.fileSize <= 0 || storage.localFile(f).length() == f.fileSize) continue;
+                    }
+                    pending.add(f);
+                }
+            }
+            long bytes = 0;
+            boolean known = !pending.isEmpty();
+            for (MediaFile f : pending) {
+                if (f.fileSize > 0) bytes += f.fileSize; else known = false;
+            }
+            final long totalBytes = bytes;
+            final boolean sizesKnown = known && bytes > 0;
+            final int totalCount = pending.size();
+            final long[] doneBytes = { 0 };
+            final int[] doneCount = { 0 };
+            final int[] lastPctSent = { -1 };
+
+            // Emits the overall percentage. Never decreases, and never reports "unknown",
+            // so the bar can neither reset nor stall.
+            final ProgressEmitter emit = (cur, curTotal, file) -> {
+                if (totalCount == 0) return;
+                int pct;
+                if (sizesKnown) {
+                    long d = doneBytes[0] + Math.max(0, cur);
+                    pct = (int) Math.min(99, d * 100L / totalBytes);
+                } else {
+                    double frac = (curTotal > 0 && cur > 0)
+                            ? Math.min(1.0, cur / (double) curTotal) : 0.0;
+                    pct = (int) Math.min(99, ((doneCount[0] + frac) * 100.0) / totalCount);
+                }
+                if (pct > lastPctSent[0]) {
+                    lastPctSent[0] = pct;
+                    main.post(() -> cb.onProgress(file, pct));
+                }
+            };
+
             Set<String> referenced = new HashSet<>(ordered.keySet());
+            // Anything downloaded during THIS run is protected from the cleanup below, whatever
+            // else happens. Deleting a file we just fetched can only ever be wrong, and it would
+            // leave the player with nothing to show and the loader stuck at 100%.
+            final Set<String> freshlyDownloaded = new HashSet<>();
             // NEVER delete or evict the content that is currently playing on screen — even if the
             // schedule changed — until its replacement is fully downloaded, validated, and switched
             // to. (Interrupted download of new content must not remove the working content.)
@@ -137,14 +199,7 @@ public class ContentSyncManager {
                 MediaDownloadManager.ProgressListener pl = null;
                 if (activeNames.contains(f.localFileName())) {
                     final MediaFile ff = f;
-                    final int[] lastPct = { -1 };
-                    pl = (downloaded, total) -> {
-                        int pct = total > 0 ? (int) (downloaded * 100L / total) : -1;
-                        if (pct != lastPct[0]) {
-                            lastPct[0] = pct;
-                            main.post(() -> cb.onProgress(ff, pct));
-                        }
-                    };
+                    pl = (downloaded, total) -> emit.emit(downloaded, total, ff);
                 }
 
                 boolean ok = downloader.download(f, storage.localFile(f), pl);
@@ -162,10 +217,25 @@ public class ContentSyncManager {
                 if (ok) {
                     storage.touch(f);
                     report.downloaded++;
+                    freshlyDownloaded.add(f.localFileName());
+                    Log.e(TAG, "Downloaded: " + f.localFileName());
+                    if (activeNames.contains(f.localFileName())) {
+                        doneBytes[0] += f.fileSize > 0 ? f.fileSize : storage.localFile(f).length();
+                        doneCount[0]++;
+                        emit.emit(0, 0, f);     // push the floor up for the next file
+                    }
                     main.post(() -> cb.onFileReady(f));
                 } else {
                     report.failed.add(f);
                 }
+            }
+
+            // Every file the active session was waiting for is now present -> show a real 100%.
+            // (The emitter caps at 99 while downloading so the bar cannot sit at 100 with work
+            // still outstanding, which is what made it look stuck.)
+            if (totalCount > 0 && doneCount[0] >= totalCount && lastPctSent[0] < 100) {
+                lastPctSent[0] = 100;
+                main.post(() -> cb.onProgress(null, 100));
             }
 
             // 3) Now that the new files are in place, remove old / removed content
@@ -175,6 +245,9 @@ public class ContentSyncManager {
             // OFFLINE we keep everything on disk so it can serve as a fallback until the new
             // content is successfully downloaded.
             if (allowCleanup && !cancelled && !Thread.currentThread().isInterrupted()) {
+                referenced.addAll(freshlyDownloaded);
+                Log.e(TAG, "Cleanup: keeping " + referenced.size() + " referenced file(s), "
+                        + freshlyDownloaded.size() + " of them downloaded just now");
                 storage.cleanupUnreferenced(referenced);
             }
 
