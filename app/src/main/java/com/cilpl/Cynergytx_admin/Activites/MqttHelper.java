@@ -1,5 +1,7 @@
 package com.cilpl.Cynergytx_admin.Activites;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -24,9 +26,11 @@ public class MqttHelper {
     private final MqttListener mqttListener;
 
     private String dynamicTopic;
-    private boolean isConnecting = false;
-    private boolean isConnected = false;
-    private boolean isSubscribed = false;
+    // Touched from the connect worker and from Paho's own callback threads.
+    private volatile boolean isConnecting = false;
+    private volatile boolean isConnected = false;
+    private volatile boolean isSubscribed = false;
+    private final Handler main = new Handler(Looper.getMainLooper());
 
     public interface MqttListener {
         void onMqttMessage(String topic, String message);
@@ -64,6 +68,19 @@ public class MqttHelper {
 
         isConnecting = true;
 
+        // MqttClient.connect() BLOCKS until the broker answers or the 10s connection timeout
+        // expires. Running that on the main thread freezes the screen, and Android shows the
+        // "app isn't responding" dialog after 5s -- exactly what a site whose network cannot
+        // reach the broker (port 1883 blocked, captive portal, packet loss) would see. The
+        // whole connect therefore runs on its own thread; the screen keeps playing regardless.
+        final String uri = serverUri;
+        Thread t = new Thread(() -> doConnect(uri, callback), "mqtt-connect");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** The blocking part of connecting. Always runs off the main thread (see connect()). */
+    private void doConnect(String serverUri, ConnectionCallback callback) {
         try {
             mqttClient = new MqttClient(serverUri, clientId, null);
 
@@ -86,7 +103,9 @@ public class MqttHelper {
                         subscribeToTopic(dynamicTopic);
                     }
 
-                    if (callback != null) callback.onConnected();
+                    // Delivered on the main thread so the caller's connection flags are only
+                    // ever read and written there.
+                    if (callback != null) main.post(callback::onConnected);
                 }
 
                 @Override
@@ -97,7 +116,7 @@ public class MqttHelper {
                     isConnecting = false;
                     isSubscribed = false;
 
-                    if (callback != null) callback.onDisconnected();
+                    if (callback != null) main.post(callback::onDisconnected);
                 }
 
                 @Override
@@ -124,7 +143,7 @@ public class MqttHelper {
             isConnected = false;
             isConnecting = false;
             Log.e(TAG, "MQTT connect error", e);
-            if (callback != null) callback.onError(e);
+            if (callback != null) main.post(() -> callback.onError(e));
         }
     }
 
@@ -191,22 +210,32 @@ public class MqttHelper {
     // =====================================================
     // DISCONNECT (SAFE)
     // =====================================================
+    /**
+     * Returns immediately. Paho's disconnect() blocks while it waits for the broker to
+     * acknowledge, and this is called from logout and from onDestroy -- both on the main
+     * thread -- so on a dead network it would freeze the screen the same way connect() did.
+     * The flags are cleared here and the network part is handed to a background thread.
+     */
     public synchronized void disconnect() {
-        try {
-            isConnecting = false;
-            isConnected = false;
-            isSubscribed = false;
+        isConnecting = false;
+        isConnected = false;
+        isSubscribed = false;
 
-            if (mqttClient != null && mqttClient.isConnected()) {
-                mqttClient.disconnect();
+        final MqttClient client = mqttClient;
+        mqttClient = null;
+        if (client == null) return;
+
+        Thread t = new Thread(() -> {
+            try {
+                if (client.isConnected()) client.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Disconnect error", e);
             }
-
-            mqttClient = null;
+            try { client.close(); } catch (Exception ignored) { }
             Log.e(TAG, "MQTT disconnected");
-
-        } catch (Exception e) {
-            Log.e(TAG, "Disconnect error", e);
-        }
+        }, "mqtt-disconnect");
+        t.setDaemon(true);
+        t.start();
     }
 
     public boolean isConnected() {
