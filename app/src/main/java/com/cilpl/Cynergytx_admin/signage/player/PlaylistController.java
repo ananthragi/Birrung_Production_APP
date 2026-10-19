@@ -87,6 +87,7 @@ public class PlaylistController {
     private List<MediaFile> items = new ArrayList<>();
     private MediaFile currentFile;            // the item currently on screen (for error recovery)
     private int index = 0;
+    private int pdfRenderToken = 0;   // guards against a slow render landing after we advanced
     private String currentPlaylistId = "";
     private String currentSignature = "";
     private String waitingSignature = "";     // content we're waiting to download (showing holding frame)
@@ -635,13 +636,29 @@ public class PlaylistController {
         playerView.setVisibility(View.GONE);
         imageView.setVisibility(View.VISIBLE);
 
-        Bitmap bmp = renderPdfFirstPage(file);
-        if (bmp != null) {
-            imageView.setImageBitmap(bmp);
-            handler.postDelayed(advance, Math.max(1, seconds) * 1000L);
-        } else {
-            handler.postDelayed(advance, 2000L); // couldn't render → move on
-        }
+        // Rendering a PDF page (decode + rasterise at 2x, up to 2048px) takes seconds on a
+        // slow TV box. Done inline it blocked the main thread on every loop of the playlist
+        // and could trigger Android's "app isn't responding" dialog, so it runs in the
+        // background and the bitmap is applied when it is ready.
+        final int token = ++pdfRenderToken;
+        final int secs = Math.max(1, seconds);
+        new Thread(() -> {
+            final Bitmap bmp = renderPdfFirstPage(file);
+            handler.post(() -> {
+                // The playlist may have moved on (or been torn down) while we rendered --
+                // applying a stale page would overwrite whatever is now on screen.
+                if (released || token != pdfRenderToken) {
+                    if (bmp != null) bmp.recycle();
+                    return;
+                }
+                if (bmp != null) {
+                    imageView.setImageBitmap(bmp);
+                    handler.postDelayed(advance, secs * 1000L);
+                } else {
+                    handler.postDelayed(advance, 2000L); // couldn't render → move on
+                }
+            });
+        }, "pdf-render").start();
     }
 
     private Bitmap renderPdfFirstPage(File file) {
