@@ -31,6 +31,11 @@ public class MqttHelper {
     private volatile boolean isConnected = false;
     private volatile boolean isSubscribed = false;
     private final Handler main = new Handler(Looper.getMainLooper());
+    // Bumped by every connect() and disconnect(). A connect that is still in flight when a
+    // disconnect happens is stale and must tear itself down: now that connecting runs in the
+    // background, a logout can land in the middle of one, and without this the connection it
+    // was opening would survive the logout and keep delivering messages.
+    private volatile int generation = 0;
 
     public interface MqttListener {
         void onMqttMessage(String topic, String message);
@@ -74,13 +79,14 @@ public class MqttHelper {
         // reach the broker (port 1883 blocked, captive portal, packet loss) would see. The
         // whole connect therefore runs on its own thread; the screen keeps playing regardless.
         final String uri = serverUri;
-        Thread t = new Thread(() -> doConnect(uri, callback), "mqtt-connect");
+        final int gen = ++generation;
+        Thread t = new Thread(() -> doConnect(uri, callback, gen), "mqtt-connect");
         t.setDaemon(true);
         t.start();
     }
 
     /** The blocking part of connecting. Always runs off the main thread (see connect()). */
-    private void doConnect(String serverUri, ConnectionCallback callback) {
+    private void doConnect(String serverUri, ConnectionCallback callback, int gen) {
         try {
             mqttClient = new MqttClient(serverUri, clientId, null);
 
@@ -138,6 +144,17 @@ public class MqttHelper {
             });
 
             mqttClient.connect(options);
+
+            // A disconnect() landed while we were connecting -> this connection is unwanted.
+            if (gen != generation) {
+                Log.e(TAG, "Connect superseded by a disconnect — closing it");
+                MqttClient stale = mqttClient;
+                mqttClient = null;
+                isConnected = false;
+                isConnecting = false;
+                isSubscribed = false;
+                closeQuietly(stale);
+            }
 
         } catch (Exception e) {
             isConnected = false;
@@ -221,10 +238,17 @@ public class MqttHelper {
         isConnected = false;
         isSubscribed = false;
 
+        generation++;   // invalidates any connect still in flight
+
         final MqttClient client = mqttClient;
         mqttClient = null;
         if (client == null) return;
+        closeQuietly(client);
+    }
 
+    /** Disconnects and closes a client on a background thread; never blocks the caller. */
+    private void closeQuietly(final MqttClient client) {
+        if (client == null) return;
         Thread t = new Thread(() -> {
             try {
                 if (client.isConnected()) client.disconnect();
