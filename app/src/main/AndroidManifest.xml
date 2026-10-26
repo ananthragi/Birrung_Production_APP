@@ -90,6 +90,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Restarts the screen after the app has updated itself. -->
+        <receiver
+            android:name=".signage.update.UpdateInstalledReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

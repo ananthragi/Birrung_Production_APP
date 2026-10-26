@@ -347,6 +347,13 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         return true;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Finish an update that was waiting on the install permission being granted.
+        com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager.resumePendingInstall(this);
+    }
+
     private void showLogoutPopup() {
         final Dialog dialog = new Dialog(SignagePlayerActivity.this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);

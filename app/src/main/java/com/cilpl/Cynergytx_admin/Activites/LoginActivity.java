@@ -295,6 +295,8 @@ public class LoginActivity extends AppCompatActivity  {
         awaitingWifiReturn = false;
         if (pendingBackOnline) showBackOnline();   // connection returned while we were hidden
         com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(this).syncNow();
+        // Finish an update that was waiting on the install permission.
+        com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager.resumePendingInstall(this);
         // The user may have just come back from the Wi-Fi settings: re-check and update.
         hideSystemUI();   // settings may have restored the system bars
         if (connMgr != null) {
