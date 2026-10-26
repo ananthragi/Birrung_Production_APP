@@ -260,7 +260,8 @@ public final class AppUpdateManager {
 
     // ------------------------------------------------------------------ helpers
 
-    private static String installedVersionName(Context ctx) {
+    /** The versionName this build was compiled with, e.g. "1.0.1". Empty if it cannot be read. */
+    public static String installedVersionName(Context ctx) {
         try {
             return String.valueOf(
                     ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).versionName);

@@ -292,6 +292,12 @@ public class ApiDataSync {
             String regdetails = ServerURL.Login();
             HashMap<String, String> hashMap = new HashMap<>();
             hashMap.put("sessioId", email);
+            // The build this screen is running. The backend compares it against what that
+            // screen should be on and answers with "version"/"apkPath" accordingly, which is
+            // also what lets an update be aimed at particular screens rather than all of them.
+            hashMap.put("currentVersion",
+                    com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager
+                            .installedVersionName(context));
          //   Log.e("Logindetails", regdetails + "," + email + "," + pass);
             NetworkServiceCall serviceCall = new NetworkServiceCall(context, false);
             serviceCall.setOnServiceCallCompleteListener(new LogviceCallCompleteListener(email));
