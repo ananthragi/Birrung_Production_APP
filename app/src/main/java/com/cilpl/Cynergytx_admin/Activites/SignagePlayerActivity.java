@@ -281,6 +281,8 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
         startScheduleTicker();
         connectMqtt();
         registerNetworkListener();
+        // Catches a sign-out that was queued before the app was last killed.
+        com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(this).syncNow();
         speedMonitor.start();
         refreshFromServer();  // on every launch: check the server for newer content and download it
     }
@@ -380,12 +382,18 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
             // below wipes it. The request is queued on the application-wide Volley queue, so
             // it still completes after this activity is torn down. Nothing waits on it --
             // the device logs out locally even if the server is unreachable.
+            final String endingSession = prefs.getString("sessionId", "");
             try {
                 new com.cilpl.Cynergytx_admin.Services.ApiDataSync(SignagePlayerActivity.this)
-                        .LogoutApiCall(prefs.getString("sessionId", ""));
+                        .LogoutApiCall(endingSession);
             } catch (Throwable t) {
                 android.util.Log.e("LogoutApi", "call skipped: " + t.getMessage());
             }
+
+            // Separately, record the status change. Stored locally first, so a sign-out made
+            // with no internet still reaches the server once the connection returns -- and
+            // before the next sign-in is allowed. Logging out locally never waits on this.
+            com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(SignagePlayerActivity.this).recordLogout(endingSession);
 
             if (mqttHelper != null) mqttHelper.disconnect();
             SharedPreferences.Editor editor = prefs.edit();
@@ -551,6 +559,7 @@ public class SignagePlayerActivity extends AppCompatActivity implements MqttHelp
                         Log.e(TAG, "Internet available → check latest content + reconnect MQTT");
                         connectMqtt();        // re-establish realtime updates + mark online (no-op if already connected)
                         refreshFromServer();  // check latest content; keeps playing if nothing changed
+                        com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(SignagePlayerActivity.this).syncNow();
                     }
 
                     // Resume any still-pending downloads immediately.

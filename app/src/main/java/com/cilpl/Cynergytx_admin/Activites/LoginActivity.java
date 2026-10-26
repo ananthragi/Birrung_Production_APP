@@ -185,6 +185,8 @@ public class LoginActivity extends AppCompatActivity  {
                     applyConnectivity();
                     // A network just appeared: probe now rather than waiting for the timer.
                     if (present && speedMonitor != null) speedMonitor.pokeNow();
+                    // ...and deliver any sign-in/out the server has not heard about yet.
+                    if (present) com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(LoginActivity.this).syncNow();
                 });
             }
         };
@@ -292,6 +294,7 @@ public class LoginActivity extends AppCompatActivity  {
         inForeground = true;
         awaitingWifiReturn = false;
         if (pendingBackOnline) showBackOnline();   // connection returned while we were hidden
+        com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(this).syncNow();
         // The user may have just come back from the Wi-Fi settings: re-check and update.
         hideSystemUI();   // settings may have restored the system bars
         if (connMgr != null) {
@@ -376,6 +379,10 @@ public class LoginActivity extends AppCompatActivity  {
 
                                 // SUCCESS → keep the button green + "Done" all the way until we
                                 // navigate. Do NOT revert to "Submit" (that caused the flicker).
+                                // Tell the server this screen is signed in. Queued first, so it
+                                // survives the connection dropping right after login.
+                                com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(LoginActivity.this).recordLogin(email);
+
                                 Class<?> next = "1".equals(messgae)
                                         ? SignagePlayerActivity.class : FileBrowseActivity.class;
                                 Intent intent = new Intent(LoginActivity.this, next);
@@ -394,7 +401,16 @@ public class LoginActivity extends AppCompatActivity  {
                             Log.e("printtest", status);
                         };
 
-                        dataSync.LoginAPicall(email, pass, apiSucessResponse);
+                        // A sign-out made while offline may still be queued. The server must
+                        // hear about it BEFORE this login, or it still believes the old session
+                        // is live and rejects us with "already logged in".
+                        com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(LoginActivity.this).whenSafeToLogin(
+                                () -> dataSync.LoginAPicall(email, pass, apiSucessResponse),
+                                () -> {
+                                    setSubmitting(false);
+                                    showActivationError("Finishing your previous sign out. "
+                                            + "Please check your internet connection and try again.");
+                                });
 
                     } else {
 
