@@ -810,6 +810,10 @@ public class ApiDataSync {
                 Log.e("Logindetails", "" + jsonObject);
                 String status = jsonObject.optString("status", "0");
 
+                com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager.check(
+                        context, jsonObject.optString("version", ""),
+                        jsonObject.optString("apkPath", ""));
+
                 if (status.equals("1")) {
                     String offLine = jsonObject.optString("offLine", "0");
                     String mqttServerurl = jsonObject.optString("MQTT_URL", "");
@@ -1466,6 +1470,12 @@ public class ApiDataSync {
                 String scheduleJson = com.cilpl.Cynergytx_admin.signage.model.ContentSchedule
                         .preservePptSlides(scheduleArray, userdata.getString("schedule_json", ""));
                 editor1.putString("schedule_json", scheduleJson);
+
+                // The admin panel advertises the current build here. Returns immediately; the
+                // download runs in the background and never holds up the schedule.
+                com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager.check(
+                        context, jsonObject.optString("version", ""),
+                        jsonObject.optString("apkPath", ""));
                 editor1.putString("mqttServer", mqttServerurl);
                 editor1.apply();
                 editor1.commit();
