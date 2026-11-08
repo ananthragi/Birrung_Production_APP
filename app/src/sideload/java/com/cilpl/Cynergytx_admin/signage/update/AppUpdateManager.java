@@ -9,9 +9,12 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -46,6 +49,11 @@ public final class AppUpdateManager {
 
     private static final String TAG = "AppUpdate";
 
+    /** Manifest meta-data key carrying the one-line release note, set from build.gradle. */
+    private static final String META_WHATS_NEW = "com.cilpl.Cynergytx_admin.WHATS_NEW";
+    /** How long the release note stays up before the install carries on by itself. */
+    private static final long ANNOUNCE_MS = 10000L;
+
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -61,6 +69,8 @@ public final class AppUpdateManager {
     /** A verified APK waiting only for permission to install. */
     private static volatile File awaitingPermission = null;
     private static volatile boolean watchingForPermission = false;
+    /** True while the release note is on screen, so a second check cannot stack a dialog. */
+    private static volatile boolean announcing = false;
 
     private AppUpdateManager() { }
 
@@ -106,10 +116,7 @@ public final class AppUpdateManager {
                     if (!apk.delete()) Log.e(TAG, "Could not delete the rejected APK");
                     return;
                 }
-                // Marked only if the installer actually opens. Marking it before meant that a
-                // device without the install permission recorded the version as "offered",
-                // then never retried it -- the update stalled until the app was restarted.
-                if (launchInstaller(ctx, apk)) promptedVersion = want;
+                offerInstall(ctx, apk, want);
             } catch (Throwable e) {
                 Log.e(TAG, "Update failed: " + e.getMessage());
             } finally {
@@ -146,12 +153,16 @@ public final class AppUpdateManager {
 
         File part = new File(apk.getAbsolutePath() + ".part");
         long have = part.exists() ? part.length() : 0;
+        long expected = -1;
 
         Request.Builder rb = new Request.Builder().url(url);
         if (have > 0) rb.addHeader("Range", "bytes=" + have + "-");   // resume an interrupted try
 
         try (Response resp = CLIENT.newCall(rb.build()).execute()) {
             boolean append = have > 0 && resp.code() == 206;
+            ResponseBody peek = resp.body();
+            long declared = peek == null ? -1 : peek.contentLength();
+            expected = declared > 0 ? (append ? have + declared : declared) : -1;
             if (!resp.isSuccessful() && resp.code() != 206) {
                 Log.e(TAG, "Download rejected: HTTP " + resp.code());
                 return null;
@@ -172,6 +183,12 @@ public final class AppUpdateManager {
         }
 
         if (part.length() == 0) return null;
+        if (expected > 0 && part.length() != expected) {
+            // A short file would be refused by the installer as an invalid package, with no
+            // clue why. Keep the .part so the next attempt resumes rather than restarting.
+            Log.e(TAG, "Download incomplete: " + part.length() + " of " + expected + " bytes");
+            return null;
+        }
         if (apk.exists() && !apk.delete()) return null;
         if (!part.renameTo(apk)) {
             Log.e(TAG, "Could not move the downloaded update into place");
@@ -202,6 +219,19 @@ public final class AppUpdateManager {
             }
             PackageInfo installed = pm.getPackageInfo(ctx.getPackageName(), flags);
 
+            // Android installs by versionCode, not by the version name shown to people. An APK
+            // whose versionCode is not higher is refused by the system installer with a
+            // confusing "package appears to be invalid", so stop here and say what is wrong.
+            long haveCode = versionCodeOf(installed);
+            long wantCode = versionCodeOf(downloaded);
+            if (wantCode <= haveCode) {
+                Log.e(TAG, "Refusing update: versionCode " + wantCode + " is not newer than the"
+                        + " installed " + haveCode + " (versionName says "
+                        + downloaded.versionName + "). Android installs by versionCode, so the"
+                        + " APK published in the admin panel needs a higher one.");
+                return false;
+            }
+
             Set<String> ours = fingerprints(installed);
             Set<String> theirs = fingerprints(downloaded);
             if (ours.isEmpty() || theirs.isEmpty()) {
@@ -218,6 +248,13 @@ public final class AppUpdateManager {
             Log.e(TAG, "Verification failed: " + t.getMessage());
             return false;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static long versionCodeOf(PackageInfo info) {
+        if (info == null) return -1;
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                ? info.getLongVersionCode() : info.versionCode;
     }
 
     private static Set<String> fingerprints(PackageInfo info) {
@@ -242,6 +279,90 @@ public final class AppUpdateManager {
             } catch (Exception ignored) { }
         }
         return out;
+    }
+
+    // ------------------------------------------------------------------ announce
+
+    /**
+     * Shows this build's one-line release note, then installs. Unattended screens are the norm,
+     * so the note is informational only: it carries on by itself after a few seconds rather than
+     * waiting for someone to press a button. With no note, or no screen to show it on, the
+     * installer opens straight away exactly as before.
+     */
+    private static void offerInstall(final Context ctx, final File apk, final String version) {
+        final String note = whatsNewIn(ctx, apk);
+        final Activity a = host.get();
+        if (note.isEmpty() || a == null || a.isFinishing() || announcing) {
+            // Marked only if the installer actually opens. Marking it before meant that a
+            // device without the install permission recorded the version as "offered",
+            // then never retried it -- the update stalled until the app was restarted.
+            if (launchInstaller(ctx, apk)) promptedVersion = version;
+            return;
+        }
+        announcing = true;
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override public void run() {
+                try {
+                    showNote(ctx, a, apk, version, note);
+                } catch (Throwable t) {
+                    // A dialog is a nicety; never let it cost us the update.
+                    Log.e(TAG, "Could not show the release note: " + t.getMessage());
+                    announcing = false;
+                    if (launchInstaller(ctx, apk)) promptedVersion = version;
+                }
+            }
+        });
+    }
+
+    private static void showNote(final Context ctx, final Activity a, final File apk,
+                                 final String version, String note) {
+        final boolean[] went = { false };
+        final AlertDialog dialog = new AlertDialog.Builder(a)
+                .setTitle("What's new in " + version)
+                .setMessage(note)
+                .setCancelable(false)
+                .setPositiveButton("Update now", null)
+                .create();
+
+        // One path for both the button and the timer, so the installer opens exactly once.
+        final Runnable go = new Runnable() {
+            @Override public void run() {
+                if (went[0]) return;
+                went[0] = true;
+                announcing = false;
+                try { dialog.dismiss(); } catch (Throwable ignored) { }
+                if (launchInstaller(ctx, apk)) promptedVersion = version;
+            }
+        };
+
+        dialog.setOnShowListener(new android.content.DialogInterface.OnShowListener() {
+            @Override public void onShow(android.content.DialogInterface d) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(new android.view.View.OnClickListener() {
+                            @Override public void onClick(android.view.View v) { go.run(); }
+                        });
+            }
+        });
+        dialog.show();
+        Log.e(TAG, "Release note shown for " + version + ": " + note);
+        new Handler(Looper.getMainLooper()).postDelayed(go, ANNOUNCE_MS);
+    }
+
+    /**
+     * The release note baked into the DOWNLOADED APK -- not this one. That is the whole point:
+     * the running build has to describe the build it is about to replace itself with.
+     */
+    private static String whatsNewIn(Context ctx, File apk) {
+        try {
+            PackageInfo info = ctx.getPackageManager()
+                    .getPackageArchiveInfo(apk.getAbsolutePath(), PackageManager.GET_META_DATA);
+            if (info == null || info.applicationInfo == null
+                    || info.applicationInfo.metaData == null) return "";
+            return clean(info.applicationInfo.metaData.getString(META_WHATS_NEW));
+        } catch (Throwable t) {
+            Log.e(TAG, "Could not read the release note: " + t.getMessage());
+            return "";
+        }
     }
 
     // ------------------------------------------------------------------ install

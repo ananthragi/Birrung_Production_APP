@@ -385,7 +385,8 @@ public class LoginActivity extends AppCompatActivity  {
                                 // survives the connection dropping right after login.
                                 com.cilpl.Cynergytx_admin.signage.status.SessionStatusManager.get(LoginActivity.this).recordLogin(email);
 
-                                Class<?> next = "1".equals(messgae)
+                                Class<?> next = ("1".equals(messgae)
+                                        || !com.cilpl.Cynergytx_admin.BuildConfig.LOCAL_FILE_MODE)
                                         ? SignagePlayerActivity.class : FileBrowseActivity.class;
                                 Intent intent = new Intent(LoginActivity.this, next);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -438,6 +439,7 @@ public class LoginActivity extends AppCompatActivity  {
         offlineplayer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!com.cilpl.Cynergytx_admin.BuildConfig.LOCAL_FILE_MODE) return;
                 Intent i = new Intent(LoginActivity.this, FileBrowseActivity.class);
                 startActivity(i);
             }

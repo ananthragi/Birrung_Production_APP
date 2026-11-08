@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Declares the Play build as an Android TV app and strips what Play will not accept.
+
+  - leanback required        : without it Play does not treat this as a TV app at all, and the
+                               app never appears on the Android TV home screen.
+  - touchscreen not required : TVs have none, so Play would exclude every TV device.
+  - camera feature removed   : it was marked required="true", which on its own reduced the
+                               supported TV device count to zero. Nothing in the code uses a
+                               camera, so the permission goes with it.
+  - LEANBACK_LAUNCHER        : the TV home screen only lists activities carrying this category.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <uses-feature android:name="android.hardware.camera" tools:node="remove" />
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+
+    <!-- Storage permissions are used by nothing but FileBrowseActivity, the local-file player,
+         which this build does not ship. The signage player keeps its downloaded content in
+         getFilesDir() (app-private), which needs no permission. All-files access in particular
+         is restricted by Play to file managers and antivirus apps and would be refused. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+
+    <!-- Pulled in by Firebase Analytics. A signage screen has no use for an advertising ID, and
+         carrying it forces an extra Data safety declaration about ad tracking. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
+    <application>
+        <!-- The local-file player is not part of the Play build; see LOCAL_FILE_MODE. -->
+        <activity android:name=".Activites.FileBrowseActivity" tools:node="remove" />
+
+        <activity
+            android:name=".Activites.SplashActivity"
+            android:exported="true"
+            tools:node="merge">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

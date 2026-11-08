@@ -40,12 +40,41 @@ android {
         //   DD = date                                        -> 12
         //   B  = build number for that date (increments)     -> 1
         //   S  = stage (5 = staging, 9 = production)          -> 5
-        versionCode 126102615
-        versionName "1.0.0"
+        versionCode 126103115
+        versionName "2.0.0"
         multiDexEnabled true
+
+        // One-line release note for THIS build. It is written into the APK's manifest, so the
+        // version already on a screen can read it out of the downloaded file and show it
+        // before installing. Set it on every release; an empty value just skips the note.
+        manifestPlaceholders = [whatsNew: "Auto update enhancements"]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    // Two distributions from one codebase.
+    //   sideload  -- the APK installed on screens directly. Keeps the self-update that pulls
+    //                a new APK from the admin panel.
+    //   playstore -- the bundle uploaded to Google Play. Declared as an Android TV app, and
+    //                the self-update is absent: Google Play forbids an app distributed on Play
+    //                from installing its own updates, and Play App Signing re-signs the app so
+    //                the signature check would reject our own APK anyway.
+    flavorDimensions += "distribution"
+    productFlavors {
+        sideload {
+            dimension "distribution"
+            // The local-file player (FileBrowseActivity) needs all-files access, which Play
+            // grants only to file managers and antivirus apps. Sideloaded screens keep it.
+            buildConfigField "boolean", "LOCAL_FILE_MODE", "true"
+        }
+        playstore {
+            dimension "distribution"
+            // Play build is the signage player only: SignagePlayerActivity reads its content
+            // from getFilesDir(), which needs no storage permission at all.
+            buildConfigField "boolean", "LOCAL_FILE_MODE", "false"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true          // R8 code shrinking + optimization
@@ -86,6 +115,7 @@ android {
     }
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     packaging {

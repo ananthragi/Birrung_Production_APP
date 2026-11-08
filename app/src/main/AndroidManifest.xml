@@ -12,8 +12,6 @@
         tools:ignore="ScopedStorage" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- Lets the app open the system installer for the update it downloaded from the admin panel. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature
         android:name="android.hardware.camera" android:required="true" />
@@ -63,6 +61,13 @@
 
         </activity>
 
+        <!-- Release note for this build, read by the PREVIOUS version during an auto-update.
+             Must stay a literal value (not @string/...): the old app reads it straight out of
+             the downloaded APK's manifest, where a resource reference could not be resolved. -->
+        <meta-data
+            android:name="com.cilpl.Cynergytx_admin.WHATS_NEW"
+            android:value="${whatsNew}" />
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
@@ -89,15 +94,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Restarts the screen after the app has updated itself. -->
-        <receiver
-            android:name=".signage.update.UpdateInstalledReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

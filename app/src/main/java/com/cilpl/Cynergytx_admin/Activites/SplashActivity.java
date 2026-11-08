@@ -45,7 +45,10 @@ public class SplashActivity extends AppCompatActivity {
 
             if (userId == null || userId.isEmpty()) {
                 intent = new Intent(this, LoginActivity.class);
-            } else if ("1".equals(offlinestatus)) {
+            } else if ("1".equals(offlinestatus)
+                    || !com.cilpl.Cynergytx_admin.BuildConfig.LOCAL_FILE_MODE) {
+                // Play builds ship without the local-file player, so they always go to the
+                // signage player regardless of what the server says.
                 intent = new Intent(this, SignagePlayerActivity.class);
             } else {
                 intent = new Intent(this, FileBrowseActivity.class);
