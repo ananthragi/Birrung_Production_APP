@@ -40,14 +40,14 @@ android {
         //   DD = date                                        -> 12
         //   B  = build number for that date (increments)     -> 1
         //   S  = stage (5 = staging, 9 = production)          -> 5
-        versionCode 126103115
-        versionName "2.0.0"
+        versionCode 126110915
+        versionName "2.0.2"
         multiDexEnabled true
 
         // One-line release note for THIS build. It is written into the APK's manifest, so the
         // version already on a screen can read it out of the downloaded file and show it
         // before installing. Set it on every release; an empty value just skips the note.
-        manifestPlaceholders = [whatsNew: "Auto update enhancements"]
+        manifestPlaceholders = [whatsNew: "New logo and internal cleanup"]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

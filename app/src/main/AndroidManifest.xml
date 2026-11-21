@@ -51,11 +51,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".Activites.OTPActivity"
-            android:exported="true"
-            android:screenOrientation="portrait" />
-
-        <activity
             android:name=".Activites.LoginActivity"
             android:exported="true">
 

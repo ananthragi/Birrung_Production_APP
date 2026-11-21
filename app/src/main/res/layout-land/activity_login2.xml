@@ -105,7 +105,7 @@
                             android:layout_height="@dimen/_20sdp"
                             android:layout_weight="1.4"
                             android:hint="@string/email_add"
-                            android:inputType="textEmailAddress"
+                            android:inputType="text"
                             android:paddingStart="@dimen/_10sdp"
                             android:paddingEnd="@dimen/_5sdp"
                             android:singleLine="true"
