@@ -40,14 +40,14 @@ android {
         //   DD = date                                        -> 12
         //   B  = build number for that date (increments)     -> 1
         //   S  = stage (5 = staging, 9 = production)          -> 5
-        versionCode 126110915
-        versionName "2.0.2"
+        versionCode 126112115
+        versionName "2.0.3"
         multiDexEnabled true
 
         // One-line release note for THIS build. It is written into the APK's manifest, so the
         // version already on a screen can read it out of the downloaded file and show it
         // before installing. Set it on every release; an empty value just skips the note.
-        manifestPlaceholders = [whatsNew: "New logo and internal cleanup"]
+        manifestPlaceholders = [whatsNew: "Screen stays awake during playback"]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,8 +59,32 @@ android {
     //                the self-update is absent: Google Play forbids an app distributed on Play
     //                from installing its own updates, and Play App Signing re-signs the app so
     //                the signature check would reject our own APK anyway.
+    // Which backend the build talks to. The base URL is the only difference between them.
+    // Note the trailing slash: ServerURL appends "/endpoint", so the live URLs have always
+    // carried a double slash, and the backend expects them that way. Keep it.
+    flavorDimensions += "environment"
+
     flavorDimensions += "distribution"
     productFlavors {
+        production {
+            dimension "environment"
+            buildConfigField "String", "BASE_URL", '"https://birrung.com.au/"'
+            manifestPlaceholders = [appLabel: "@string/app_name"]
+        }
+        staging {
+            dimension "environment"
+            buildConfigField "String", "BASE_URL", '"https://staging.birrung.com.au/"'
+            // A distinct name on the TV home screen: all three share one package name, so
+            // installing one replaces the other and the label is the only way to tell which
+            // build a screen is actually running.
+            manifestPlaceholders = [appLabel: "Birrung Staging"]
+        }
+        sandbox {
+            dimension "environment"
+            buildConfigField "String", "BASE_URL", '"https://sandbox.birrung.com.au/"'
+            manifestPlaceholders = [appLabel: "Birrung Sandbox"]
+        }
+
         sideload {
             dimension "distribution"
             // The local-file player (FileBrowseActivity) needs all-files access, which Play

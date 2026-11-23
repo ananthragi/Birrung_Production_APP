@@ -572,7 +572,7 @@ public class PlaylistController {
         //   - iframe with a youtube.com base URL  → our page pretends to BE youtube.com  → error 152
         //   - loadUrl() of the embed page directly → no referrer at all                  → error 153
         // So we host the iframe on the project's own domain and pass a matching &origin=.
-        final String base = "https://birrung.com.au";
+        final String base = com.cilpl.Cynergytx_admin.NetworkCalling.ServerURL.origin();
 
         // Use the YouTube IFrame API so we can control the player:
         //  - it must START muted (browsers/WebView only allow autoplay when muted),

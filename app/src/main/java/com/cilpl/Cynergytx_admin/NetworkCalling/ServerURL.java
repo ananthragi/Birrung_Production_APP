@@ -9,12 +9,22 @@ public class ServerURL {
 
     //oldMain Url
     //private static String start_url = "https://mysign.au/";
-    private static String start_url = "https://birrung.com.au/";
+    // Set by the build: production / staging / sandbox. See productFlavors in build.gradle.
+    private static String start_url = com.cilpl.Cynergytx_admin.BuildConfig.BASE_URL;
 
     //testurl
   // private static String start_url = "https://sandbox.mysign.au/";
 
 
+
+    /**
+     * The base URL without its trailing slash, for the places that append "/path" themselves.
+     * start_url keeps its slash because the API endpoints above have always been called with
+     * the resulting double slash and the backend expects that.
+     */
+    public static String origin() {
+        return start_url.replaceAll("/+$", "");
+    }
 
     public static String userregsiration() {
         return start_url + "/user_registration";

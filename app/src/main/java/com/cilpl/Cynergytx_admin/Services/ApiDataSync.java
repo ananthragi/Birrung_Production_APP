@@ -42,8 +42,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -112,6 +115,11 @@ public class ApiDataSync {
             hashMap.put("currentVersion",
                     com.cilpl.Cynergytx_admin.signage.update.AppUpdateManager
                             .installedVersionName(context));
+            // The screen's own clock at the moment Submit was pressed, e.g. "09:43 PM".
+            // Locale.US so the AM/PM marker is always what the backend expects -- some
+            // locales render it differently, or use a 24-hour marker entirely.
+            hashMap.put("time_zone",
+                    new SimpleDateFormat("hh:mm a", Locale.US).format(new Date()));
          //   Log.e("Logindetails", regdetails + "," + email + "," + pass);
             NetworkServiceCall serviceCall = new NetworkServiceCall(context, false);
             serviceCall.setOnServiceCallCompleteListener(new LogviceCallCompleteListener(email));

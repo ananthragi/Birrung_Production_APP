@@ -23,7 +23,9 @@ public class StatusApi implements StatusTransport {
     private static final String TAG = "StatusApi";
 
     /** Single source of truth for the endpoint. */
-    private static final String ENDPOINT = "https://birrung.com.au/loginUpdates";
+    // Single slash here, unlike ServerURL -- BASE_URL already ends with one.
+    private static final String ENDPOINT =
+            com.cilpl.Cynergytx_admin.BuildConfig.BASE_URL + "loginUpdates";
 
     private final OkHttpClient client;
 

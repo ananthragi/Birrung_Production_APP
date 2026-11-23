@@ -65,6 +65,13 @@ public class FileBrowseActivity extends AppCompatActivity  implements VideoAdapt
         setContentView(R.layout.activity_file_browse);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        // Keep the display awake for as long as this screen is in front, whatever is on it.
+        // The PlayerView in the layout carries android:keepScreenOn, but that only counts
+        // while the view is visible -- and it is hidden whenever an image, a PDF page or a
+        // PowerPoint slide is showing, so between videos nothing held the TV awake and it
+        // slept mid-playlist. A window flag covers every content type, and Android clears
+        // it automatically when the activity goes to the background.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         hideSystemUI();
         userdata = getSharedPreferences("Userdata", MODE_PRIVATE);
