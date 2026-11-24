@@ -99,7 +99,7 @@
                         app:passwordToggleTint="@color/colorPrimary"
                         app:shapeAppearance="@style/Rounded">
 
-                        <com.cilpl.Cynergytx_admin.utils.EditTwCenMTFont
+                        <au.com.birrung.tv.utils.EditTwCenMTFont
                             android:id="@+id/email_id"
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/_20sdp"
@@ -115,7 +115,7 @@
 
 
 
-                    <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                    <au.com.birrung.tv.utils.ButtonEditTwCenMTFont
                         android:id="@+id/signinbtn"
                         android:layout_width="@dimen/_50sdp"
                         android:layout_height="@dimen/_20sdp"
@@ -178,7 +178,7 @@
                             android:textSize="@dimen/_7sdp"
                             android:visibility="gone" />
 
-                        <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                        <au.com.birrung.tv.utils.ButtonEditTwCenMTFont
                             android:id="@+id/configureWifiBtn"
                             android:layout_width="wrap_content"
                             android:layout_height="@dimen/_20sdp"
@@ -195,7 +195,7 @@
                             android:visibility="gone" />
                     </LinearLayout>
 
-                    <com.cilpl.Cynergytx_admin.utils.TwCenMTBold
+                    <au.com.birrung.tv.utils.TwCenMTBold
                         android:id="@+id/offlineplayer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

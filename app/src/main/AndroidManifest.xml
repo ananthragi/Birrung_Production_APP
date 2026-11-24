@@ -60,7 +60,7 @@
              Must stay a literal value (not @string/...): the old app reads it straight out of
              the downloaded APK's manifest, where a resource reference could not be resolved. -->
         <meta-data
-            android:name="com.cilpl.Cynergytx_admin.WHATS_NEW"
+            android:name="au.com.birrung.tv.WHATS_NEW"
             android:value="${whatsNew}" />
 
         <meta-data

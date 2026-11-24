@@ -12,7 +12,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace 'com.cilpl.Cynergytx_admin'
+    namespace 'au.com.birrung.tv'
     compileSdk 35
 
     // Legacy Apache HTTP (httpmime/httpcore are used); needed so R8 resolves android.net.http.
@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.cilpl.Cynergytx_admin"
+        applicationId "au.com.birrung.tv"
         minSdk 26
         targetSdk 35
         // versionCode scheme: M YY MM DD B S

@@ -40,7 +40,7 @@
                 android:gravity="center"
                 android:orientation="horizontal">
 
-                <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                <au.com.birrung.tv.utils.ButtonEditTwCenMTFont
                     android:id="@+id/alert_clncel"
                     android:layout_width="120dp"
                     android:layout_height="45dp"
@@ -54,7 +54,7 @@
                     android:nextFocusRight="@id/alertyes_btn"
                     android:text="Cancel" />
 
-                <com.cilpl.Cynergytx_admin.utils.ButtonEditTwCenMTFont
+                <au.com.birrung.tv.utils.ButtonEditTwCenMTFont
                     android:id="@+id/alertyes_btn"
                     android:layout_width="120dp"
                     android:layout_height="45dp"

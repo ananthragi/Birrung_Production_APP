@@ -100,7 +100,7 @@
                 android:textStyle="bold"
                 android:textSize="@dimen/_11sdp" />
 
-            <com.cilpl.Cynergytx_admin.utils.StripedProgressView
+            <au.com.birrung.tv.utils.StripedProgressView
                 android:id="@+id/loadingBar"
                 android:layout_width="@dimen/_200sdp"
                 android:layout_height="@dimen/_22sdp"

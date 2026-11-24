@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1964680537:android:531386f9674e9ce24bd848",
+        "android_client_info": {
+          "package_name": "au.com.birrung.tv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLP5CPIA06wIFCpioE-GakUiKVR8GVjZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1964680537:android:9457d867a9e9d4394bd848",
         "android_client_info": {
           "package_name": "com.cilpl.Cynergytx_admin"

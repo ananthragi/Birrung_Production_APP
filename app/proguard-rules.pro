@@ -11,7 +11,7 @@
 # Keep all app classes. This app parses JSON by field/key names and uses several
 # reflection-based libraries, so obfuscating app code risks subtle runtime breakage.
 # (Library code is still shrunk/optimized by R8; app classes are kept intact.)
--keep class com.cilpl.Cynergytx_admin.** { *; }
+-keep class au.com.birrung.tv.** { *; }
 
 # Custom views referenced from XML layouts.
 -keep public class * extends android.view.View { *; }
